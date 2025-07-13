@@ -1,3 +1,27 @@
+# 📱 chambApp - Plataforma de Trabajos Esporádicos  
+
+**Conecta empresas con personal temporal para trabajos flexibles sin contratos**  
+
+## 🚀 Características Principales  
+- 👥 Perfiles para **empresas** (publican trabajos) y **workers** (buscan oportunidades)  
+- 📋 Ofertas de trabajo por categoría (eventos, catering, delivery, etc.)  
+- 💸 Sistema integrado de **pagos** seguros  
+- ⭐ Valoraciones y reputación para ambos roles  
+- 📱 Mobile-first (React Native + Node.js + SQLite)  
+
+## 🔧 Tecnologías  
+- **Frontend**: React Native (TypeScript)  
+- **Backend**: Node.js + Express  
+- **DB**: SQLite (MVP) → PostgreSQL (producción)  
+- **Autenticación**: JWT  
+- **Pagos**: Stripe/PayPal  
+
+## 📌 Próximos Pasos  
+- [ ] MVP funcional (registro, búsqueda, pagos básicos)  
+- [ ] Pruebas con usuarios reales  
+- [ ] Documentación API  
+ 
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
