@@ -2,11 +2,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function HomeScreen() {
+export default function RegisterScreen() {
+  const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleRegister = () => {
     // Aquí conectas a tu backend
   };
 
@@ -17,23 +19,32 @@ export default function HomeScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
     >
       <View style={styles.container}>
-        {/* Encabezado y saludo */}
+        {/* Encabezado */}
         <View style={styles.topContainer}>
           <Image source={require('../assets/Logo_ChambApp.png')} style={styles.logo} />
-          <Text style={styles.hola}>¡Hola!</Text>
-          <Text style={styles.bienvenido}>Bienvenido a ChambApp</Text>
+          <Text style={styles.titulo}>Registro</Text>
+          <Text style={styles.subtitulo}>Crea tu cuenta en ChambApp</Text>
         </View>
 
-        {/* Sección inferior con scroll y inputs */}
+        {/* Formulario */}
         <View style={styles.bottomContainer}>
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-            <Text style={styles.loginTitle}>Iniciar Sesión</Text>
+            <View style={styles.inputBox}>
+              <MaterialIcons name="person" size={22} color="#755B51" style={styles.icon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre completo"
+                placeholderTextColor="#755B51"
+                value={nombre}
+                onChangeText={setNombre}
+              />
+            </View>
 
             <View style={styles.inputBox}>
               <MaterialIcons name="email" size={22} color="#755B51" style={styles.icon} />
               <TextInput
                 style={styles.input}
-                placeholder="email"
+                placeholder="Correo electrónico"
                 placeholderTextColor="#755B51"
                 value={email}
                 onChangeText={setEmail}
@@ -46,7 +57,7 @@ export default function HomeScreen() {
               <MaterialIcons name="lock" size={22} color="#755B51" style={styles.icon} />
               <TextInput
                 style={styles.input}
-                placeholder="contraseña"
+                placeholder="Contraseña"
                 placeholderTextColor="#755B51"
                 value={password}
                 onChangeText={setPassword}
@@ -54,18 +65,26 @@ export default function HomeScreen() {
               />
             </View>
 
-            <TouchableOpacity style={styles.linkContainer}>
-              <Text style={styles.forgot}>¿olvidaste tu contraseña?</Text>
+            <View style={styles.inputBox}>
+              <MaterialIcons name="lock" size={22} color="#755B51" style={styles.icon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirmar contraseña"
+                placeholderTextColor="#755B51"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <TouchableOpacity style={styles.button} onPress={handleRegister}>
+              <Text style={styles.buttonText}>Registrarse</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-              <Text style={styles.buttonText}>Ingresar</Text>
-            </TouchableOpacity>
-
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>¿No tienes cuenta? </Text>
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
               <TouchableOpacity /* onPress={...} */>
-                <Text style={styles.registerLink}>Registrarse</Text>
+                <Text style={styles.loginLink}>Inicia sesión</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -81,25 +100,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#62483E',
   },
   topContainer: {
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
     alignItems: 'flex-start',
     paddingHorizontal: 32,
     backgroundColor: '#62483E',
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
+    width: 80,
+    height: 80,
+    marginBottom: 12,
     resizeMode: 'contain',
   },
-  hola: {
+  titulo: {
     color: '#fff',
-    fontSize: 36,
+    fontSize: 30,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  bienvenido: {
+  subtitulo: {
     color: '#fff',
     fontSize: 18,
     marginBottom: 8,
@@ -124,13 +143,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 24,
   },
-  loginTitle: {
-    fontSize: 28,
-    color: '#4C3A34',
-    fontWeight: '500',
-    marginBottom: 18,
-    marginTop: 8,
-  },
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -151,16 +163,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#4C3A34',
   },
-  forgot: {
-    color: '#755B51',
-    fontSize: 14,
-    marginBottom: 18,
-    textAlign: 'right',
-  },
-  linkContainer: {
-    width: '100%',
-    alignItems: 'flex-end',
-  },
   button: {
     backgroundColor: '#57443D',
     paddingVertical: 13,
@@ -175,17 +177,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 18,
   },
-  registerContainer: {
+  loginContainer: {
     flexDirection: 'row',
     marginTop: 8,
+    justifyContent: 'center',
   },
-  registerText: {
+  loginText: {
     color: '#755B51',
     fontSize: 15,
   },
-  registerLink: {
+  loginLink: {
     color: '#4C3A34',
     fontWeight: 'bold',
     fontSize: 15,
   },
 });
+
