@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+<<<<<<< HEAD
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -67,6 +68,17 @@ export default function LoginScreen() {
 
   const handleRegister = () => {
     router.push('/register');
+=======
+import React, { useState } from 'react';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+export default function HomeScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = () => {
+    // Aquí conectas a tu backend
+>>>>>>> design
   };
 
   return (
@@ -98,7 +110,10 @@ export default function LoginScreen() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+<<<<<<< HEAD
                 editable={!isLoading}
+=======
+>>>>>>> design
               />
             </View>
 
@@ -111,6 +126,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
+<<<<<<< HEAD
                 editable={!isLoading}
               />
             </View>
@@ -123,11 +139,26 @@ export default function LoginScreen() {
               <Text style={styles.buttonText}>
                 {isLoading ? 'Ingresando...' : 'Ingresar'}
               </Text>
+=======
+              />
+            </View>
+
+            <TouchableOpacity style={styles.linkContainer}>
+              <Text style={styles.forgot}>¿olvidaste tu contraseña?</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+              <Text style={styles.buttonText}>Ingresar</Text>
+>>>>>>> design
             </TouchableOpacity>
 
             <View style={styles.registerContainer}>
               <Text style={styles.registerText}>¿No tienes cuenta? </Text>
+<<<<<<< HEAD
               <TouchableOpacity onPress={handleRegister} disabled={isLoading}>
+=======
+              <TouchableOpacity /* onPress={...} */>
+>>>>>>> design
                 <Text style={styles.registerLink}>Registrarse</Text>
               </TouchableOpacity>
             </View>
@@ -214,6 +245,19 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#4C3A34',
   },
+<<<<<<< HEAD
+=======
+  forgot: {
+    color: '#755B51',
+    fontSize: 14,
+    marginBottom: 18,
+    textAlign: 'right',
+  },
+  linkContainer: {
+    width: '100%',
+    alignItems: 'flex-end',
+  },
+>>>>>>> design
   button: {
     backgroundColor: '#57443D',
     paddingVertical: 13,
@@ -223,9 +267,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     marginTop: 5,
   },
+<<<<<<< HEAD
   buttonDisabled: {
     backgroundColor: '#9A8A84',
   },
+=======
+>>>>>>> design
   buttonText: {
     color: '#fff',
     fontWeight: '600',
