@@ -1,38 +1,119 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const JOBS = [
-  {
-    id: '1',
-    title: 'Salonero (Eventual)',
-    company: 'Hilton',
-    salary: '3.12$/h',
-    date: '23/07/2025',
-    logo: require('../assets/hilton.png'),
-  },
-  {
-    id: '2',
-    title: 'Salonero (Eventual)',
-    company: 'Sheraton',
-    salary: '3.05$/h',
-    date: '22/07/2025',
-    logo: require('../assets/sheraton.png'),
-  },
-  {
-    id: '3',
-    title: 'Salonero (Eventual)',
-    company: 'Marriot',
-    salary: '3.75$/h',
-    date: '20/07/2025',
-    logo: require('../assets/marriot.png'),
-  },
-];
+interface JobOffer {
+  id: number;
+  title: string;
+  company_id: number;
+  description: string;
+  location: string;
+  hourly_rate: number;
+  start_date: string;
+  end_date: string;
+  required_workers: number;
+  category: string;
+  status: string;
+}
+
+interface Company {
+  id: number;
+  company_name: string;
+  logo?: string;
+}
 
 export default function HomeScreen() {
   const [search, setSearch] = useState('');
+  const [jobOffers, setJobOffers] = useState<JobOffer[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchJobOffers();
+    fetchCompanies();
+  }, []);
+
+  const fetchJobOffers = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/job_offers/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Job offers fetched:', data.length);
+        setJobOffers(data.filter((job: JobOffer) => job.status === 'open'));
+      }
+    } catch (error) {
+      console.error('Error fetching job offers:', error);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/companies/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCompanies(data);
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCompanyName = (companyId: number) => {
+    const company = companies.find(c => c.id === companyId);
+    return company?.company_name || 'Empresa';
+  };
+
+  const handleApplyJob = async (jobOfferId: number) => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) {
+        Alert.alert('Error', 'Debes iniciar sesión para aplicar');
+        return;
+      }
+
+      // Crear aplicación
+      const applicationData = {
+        job_offer_id: jobOfferId,
+        worker_id: parseInt(userId),
+        application_status: 'pending',
+        applied_at: new Date().toISOString(),
+        message: 'Interesado en el puesto'
+      };
+
+      const response = await fetch('http://127.0.0.1:8000/applications/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(applicationData),
+      });
+
+      if (response.ok) {
+        Alert.alert('Éxito', 'Aplicación enviada correctamente');
+      } else {
+        Alert.alert('Error', 'No se pudo enviar la aplicación');
+      }
+    } catch (error) {
+      console.error('Error applying to job:', error);
+      Alert.alert('Error', 'Error de conexión');
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -48,7 +129,6 @@ export default function HomeScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Limpiar todos los datos del usuario
               await AsyncStorage.multiRemove([
                 'userToken',
                 'userEmail',
@@ -56,7 +136,6 @@ export default function HomeScreen() {
                 'isLoggedIn'
               ]);
               
-              console.log('Sesión cerrada, redirigiendo a registro');
               router.replace('/register');
             } catch (error) {
               console.error('Error logging out:', error);
@@ -68,9 +147,19 @@ export default function HomeScreen() {
     );
   };
 
-  // Puedes activar el filtro si tu diseño lo permite
-  // const filteredJobs = JOBS.filter(...);
-  const filteredJobs = JOBS;
+  const filteredJobs = jobOffers.filter(job => 
+    job.title.toLowerCase().includes(search.toLowerCase()) ||
+    getCompanyName(job.company_id).toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#62483E" />
+        <Text style={{ marginTop: 10, color: '#62483E' }}>Cargando empleos...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -84,7 +173,7 @@ export default function HomeScreen() {
         </View>
         <TextInput
           style={styles.searchInput}
-          placeholder="buscar"
+          placeholder="buscar empleos..."
           placeholderTextColor="#755B51"
           value={search}
           onChangeText={setSearch}
@@ -92,28 +181,46 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Empleos</Text>
+        <Text style={styles.sectionTitle}>Empleos Disponibles</Text>
         <FlatList
           data={filteredJobs}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              {/* <Image source={item.logo} style={styles.logoJob} /> */}
               <View style={{ flex: 1 }}>
                 <Text style={styles.jobTitle}>{item.title}</Text>
-                <Text style={styles.company}>{item.company}</Text>
+                <Text style={styles.company}>{getCompanyName(item.company_id)}</Text>
+                <Text style={styles.description} numberOfLines={2}>
+                  {item.description}
+                </Text>
                 <View style={styles.infoRow}>
-                  <Text style={styles.salary}>{item.salary}</Text>
-                  <Text style={styles.date}>{item.date}</Text>
+                  <Text style={styles.salary}>${item.hourly_rate}/h</Text>
+                  <Text style={styles.location}>{item.location}</Text>
                 </View>
-                <TouchableOpacity style={styles.button}>
-                  <Text style={styles.buttonText}>ver más</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.date}>
+                    {new Date(item.start_date).toLocaleDateString()}
+                  </Text>
+                  <Text style={styles.workers}>
+                    {item.required_workers} personas
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.button}
+                  onPress={() => handleApplyJob(item.id)}
+                >
+                  <Text style={styles.buttonText}>Aplicar</Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No hay empleos disponibles</Text>
+            </View>
+          }
         />
       </View>
     </View>
@@ -154,7 +261,6 @@ const styles = StyleSheet.create({
     height: 48,
     fontSize: 17,
     color: '#4C3A34',
-    borderWidth: 0,
     marginBottom: 16,
   },
   section: {
@@ -190,14 +296,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
-  logoJob: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    marginRight: 18,
-    backgroundColor: '#fff',
-    resizeMode: 'contain',
-  },
   jobTitle: {
     color: '#4C3A34',
     fontSize: 20,
@@ -208,24 +306,34 @@ const styles = StyleSheet.create({
     color: '#4C3A34',
     fontSize: 16,
     fontWeight: '400',
-    marginBottom: 10,
+    marginBottom: 6,
+  },
+  description: {
+    color: '#755B51',
+    fontSize: 14,
+    marginBottom: 8,
   },
   infoRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: 10,
-    gap: 18,
+    justifyContent: 'space-between',
+    marginBottom: 6,
   },
   salary: {
     color: '#4C3A34',
     fontSize: 17,
     fontWeight: '500',
-    marginRight: 18,
+  },
+  location: {
+    color: '#4C3A34',
+    fontSize: 15,
   },
   date: {
-    color: '#4C3A34',
-    fontSize: 17,
-    fontWeight: '400',
+    color: '#755B51',
+    fontSize: 14,
+  },
+  workers: {
+    color: '#755B51',
+    fontSize: 14,
   },
   button: {
     backgroundColor: '#57443D',
@@ -233,13 +341,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 38,
     alignSelf: 'flex-start',
-    marginTop: 2,
+    marginTop: 8,
   },
   buttonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: '400',
     textAlign: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 50,
+  },
+  emptyText: {
+    color: '#755B51',
+    fontSize: 16,
   },
 });
 

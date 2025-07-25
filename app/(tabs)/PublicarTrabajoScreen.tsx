@@ -1,18 +1,107 @@
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
-import { CheckBox, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function PublicarTrabajoScreen() {
   const [puesto, setPuesto] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [virtual, setVirtual] = useState(false);
-  const [presencial, setPresencial] = useState(false);
-  const [hibrido, setHibrido] = useState(false);
   const [salario, setSalario] = useState('');
   const [ubicacion, setUbicacion] = useState('');
+  const [trabajadores, setTrabajadores] = useState('1');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePublicar = () => {
-    // Aquí iría la lógica para publicar trabajo
+  const handlePublicar = async () => {
+    if (!puesto || !descripcion || !salario || !ubicacion) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Obtener el company_id del usuario loggeado
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) {
+        Alert.alert('Error', 'Debes iniciar sesión');
+        return;
+      }
+
+      // Buscar la empresa asociada al usuario
+      const companiesResponse = await fetch('http://127.0.0.1:8000/companies/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const companies = await companiesResponse.json();
+      const userCompany = companies.find((c: any) => c.user_id === parseInt(userId));
+
+      if (!userCompany) {
+        Alert.alert('Error', 'No se encontró empresa asociada a tu cuenta');
+        return;
+      }
+
+      // Crear job offer
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+
+      const jobOfferData = {
+        company_id: userCompany.id,
+        title: puesto,
+        description: descripcion,
+        category: 'other',
+        location: ubicacion,
+        start_date: tomorrow.toISOString().split('T')[0],
+        end_date: nextWeek.toISOString().split('T')[0],
+        start_time: '09:00:00',
+        end_time: '17:00:00',
+        required_workers: parseInt(trabajadores),
+        hourly_rate: parseFloat(salario),
+        total_payment: parseFloat(salario) * 8 * parseInt(trabajadores), // 8 horas estimadas
+        experience_level: 'entry',
+        status: 'open'
+      };
+
+      const response = await fetch('http://127.0.0.1:8000/job_offers/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jobOfferData),
+      });
+
+      if (response.ok) {
+        Alert.alert(
+          'Éxito',
+          'Trabajo publicado exitosamente',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Limpiar formulario
+                setPuesto('');
+                setDescripcion('');
+                setSalario('');
+                setUbicacion('');
+                setTrabajadores('1');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', 'No se pudo publicar el trabajo');
+      }
+    } catch (error) {
+      console.error('Error publishing job:', error);
+      Alert.alert('Error', 'Error de conexión');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -25,6 +114,7 @@ export default function PublicarTrabajoScreen() {
           {/* Puedes poner aquí la imagen del Coffeshop si la tienes */}
         </View>
       </View>
+      
       <View style={styles.mainContainer}>
         <Text style={styles.title}>Publicar trabajo</Text>
 
@@ -37,6 +127,7 @@ export default function PublicarTrabajoScreen() {
             placeholderTextColor="#b8b6b6"
             value={puesto}
             onChangeText={setPuesto}
+            editable={!isLoading}
           />
         </View>
 
@@ -45,41 +136,13 @@ export default function PublicarTrabajoScreen() {
           <MaterialIcons name="description" size={25} color="#755B51" style={styles.icon} />
           <TextInput
             style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
-            placeholder="Descripción del puesto (Requisitos y Salario)"
+            placeholder="Descripción del puesto (Requisitos y detalles)"
             placeholderTextColor="#b8b6b6"
             value={descripcion}
             onChangeText={setDescripcion}
             multiline
+            editable={!isLoading}
           />
-        </View>
-
-        {/* Modalidad */}
-        <View style={styles.modalidadContainer}>
-          <Text style={styles.modalidadLabel}>Modalidad del trabajo</Text>
-          <View style={styles.checkRow}>
-            <Text style={styles.modalidadText}>Virtual</Text>
-            <CheckBox
-              value={virtual}
-              onValueChange={setVirtual}
-              tintColors={{ true: "#62483E", false: "#D2D2D2" }}
-            />
-          </View>
-          <View style={styles.checkRow}>
-            <Text style={styles.modalidadText}>Presencial</Text>
-            <CheckBox
-              value={presencial}
-              onValueChange={setPresencial}
-              tintColors={{ true: "#62483E", false: "#D2D2D2" }}
-            />
-          </View>
-          <View style={styles.checkRow}>
-            <Text style={styles.modalidadText}>Híbrido</Text>
-            <CheckBox
-              value={hibrido}
-              onValueChange={setHibrido}
-              tintColors={{ true: "#62483E", false: "#D2D2D2" }}
-            />
-          </View>
         </View>
 
         {/* Salario */}
@@ -87,11 +150,12 @@ export default function PublicarTrabajoScreen() {
           <FontAwesome name="dollar" size={22} color="#755B51" style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Salario"
+            placeholder="Salario por hora"
             placeholderTextColor="#b8b6b6"
             value={salario}
             onChangeText={setSalario}
             keyboardType="numeric"
+            editable={!isLoading}
           />
         </View>
 
@@ -104,12 +168,33 @@ export default function PublicarTrabajoScreen() {
             placeholderTextColor="#b8b6b6"
             value={ubicacion}
             onChangeText={setUbicacion}
+            editable={!isLoading}
+          />
+        </View>
+
+        {/* Número de trabajadores */}
+        <View style={styles.inputBox}>
+          <MaterialIcons name="people" size={25} color="#755B51" style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Número de trabajadores necesarios"
+            placeholderTextColor="#b8b6b6"
+            value={trabajadores}
+            onChangeText={setTrabajadores}
+            keyboardType="numeric"
+            editable={!isLoading}
           />
         </View>
 
         {/* Botón */}
-        <TouchableOpacity style={styles.button} onPress={handlePublicar}>
-          <Text style={styles.buttonText}>Publicar Trabajo</Text>
+        <TouchableOpacity 
+          style={[styles.button, isLoading && styles.buttonDisabled]} 
+          onPress={handlePublicar}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Publicando...' : 'Publicar Trabajo'}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -156,7 +241,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     width: '100%',
     height: 50,
-    borderWidth: 0,
     marginTop: 2
   },
   icon: {
@@ -167,32 +251,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4C3A34',
   },
-  modalidadContainer: {
-    backgroundColor: '#F2F0F0',
-    borderRadius: 24,
-    marginBottom: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    width: '100%',
-    alignItems: 'flex-start',
-  },
-  modalidadLabel: {
-    color: '#4C3A34',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 6,
-    marginLeft: 4,
-  },
-  modalidadText: {
-    color: '#4C3A34',
-    fontSize: 16,
-    marginRight: 10,
-  },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
   button: {
     backgroundColor: '#57443D',
     paddingVertical: 13,
@@ -201,6 +259,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 18,
     marginTop: 12,
+  },
+  buttonDisabled: {
+    backgroundColor: '#9A8A84',
   },
   buttonText: {
     color: '#fff',

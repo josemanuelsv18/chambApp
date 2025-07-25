@@ -119,6 +119,10 @@ export default function RegisterScreen() {
     router.push('/login');
   };
 
+  const handleGoToCompanyRegister = () => {
+    router.push('/RegisterEmpresaScreen');
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -134,6 +138,16 @@ export default function RegisterScreen() {
 
         <View style={styles.bottomContainer}>
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+            {/* Toggle para tipo de usuario */}
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity style={styles.toggleLeftActive}>
+                <Text style={styles.toggleLeftTextActive}>Trabajador</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toggleRight} onPress={handleGoToCompanyRegister}>
+                <Text style={styles.toggleRightText}>Empresa</Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.inputBox}>
               <MaterialIcons name="email" size={22} color="#755B51" style={styles.icon} />
               <TextInput
@@ -297,6 +311,33 @@ const styles = StyleSheet.create({
     color: '#4C3A34',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    alignSelf: 'flex-start',
+  },
+  toggleLeftActive: {
+    backgroundColor: '#57443D',
+    borderRadius: 22,
+    paddingVertical: 6,
+    paddingHorizontal: 23,
+    marginRight: 8,
+  },
+  toggleLeftTextActive: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  toggleRight: {
+    backgroundColor: '#D2D2D2',
+    borderRadius: 22,
+    paddingVertical: 6,
+    paddingHorizontal: 23,
+  },
+  toggleRightText: {
+    color: '#755B51',
+    fontSize: 17,
   },
 });
 

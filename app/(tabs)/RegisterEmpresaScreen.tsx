@@ -1,6 +1,7 @@
 import { Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function RegisterEmpresaScreen() {
   const [empresa, setEmpresa] = useState('');
@@ -10,6 +11,122 @@ export default function RegisterEmpresaScreen() {
   const [confirmar, setConfirmar] = useState('');
   const [desc, setDesc] = useState('');
   const [fiscales, setFiscales] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRegister = async () => {
+    // Validaciones
+    if (!empresa || !email || !telefono || !password || !confirmar) {
+      Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    if (password !== confirmar) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return;
+    }
+
+    if (password.length < 8) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // 1. Crear usuario empresa
+      const userData = {
+        email: email.toLowerCase().trim(),
+        phone: telefono.replace(/[\s\-\(\)]/g, ''),
+        user_type: 'company',
+        password: password,
+      };
+
+      const userResponse = await fetch('http://127.0.0.1:8000/users/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!userResponse.ok) {
+        Alert.alert('Error', 'No se pudo crear la cuenta de usuario');
+        return;
+      }
+
+      // 2. Obtener el usuario creado para obtener su ID
+      const usersResponse = await fetch('http://127.0.0.1:8000/users/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const users = await usersResponse.json();
+      const newUser = users.find((u: any) => u.email === email.toLowerCase().trim());
+
+      if (!newUser) {
+        Alert.alert('Error', 'No se pudo obtener la información del usuario');
+        return;
+      }
+
+      // 3. Crear empresa
+      const companyData = {
+        user_id: newUser.id,
+        company_name: empresa,
+        business_type: desc || 'Sin descripción',
+        email: email.toLowerCase().trim(),
+        phone: telefono.replace(/[\s\-\(\)]/g, ''),
+        website: '',
+        logo: '',
+        description: desc || 'Sin descripción',
+        location: '',
+        tax_info: fiscales || '',
+        verification_status: 'pending'
+      };
+
+      const companyResponse = await fetch('http://127.0.0.1:8000/companies/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(companyData),
+      });
+
+      if (companyResponse.ok) {
+        Alert.alert(
+          'Éxito',
+          'Cuenta de empresa creada exitosamente',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.push('/login')
+            }
+          ]
+        );
+
+        // Limpiar formulario
+        setEmpresa('');
+        setEmail('');
+        setTelefono('');
+        setPassword('');
+        setConfirmar('');
+        setDesc('');
+        setFiscales('');
+      } else {
+        Alert.alert('Error', 'No se pudo crear la empresa');
+      }
+    } catch (error) {
+      console.error('Error registering company:', error);
+      Alert.alert('Error', 'Error de conexión');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoToWorkerRegister = () => {
+    router.push('/register');
+  };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#62483E' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -28,8 +145,12 @@ export default function RegisterEmpresaScreen() {
         <View style={styles.container}>
           <Text style={styles.title}>Crear cuenta empresa</Text>
           <View style={styles.toggleContainer}>
-            <TouchableOpacity style={styles.toggleLeft}><Text style={styles.toggleLeftText}>Trabajador</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.toggleRightActive}><Text style={styles.toggleRightTextActive}>Empresa</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.toggleLeft} onPress={handleGoToWorkerRegister}>
+              <Text style={styles.toggleLeftText}>Trabajador</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.toggleRightActive}>
+              <Text style={styles.toggleRightTextActive}>Empresa</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.inputBox}>
@@ -40,8 +161,10 @@ export default function RegisterEmpresaScreen() {
               placeholderTextColor="#755B51"
               value={empresa}
               onChangeText={setEmpresa}
+              editable={!isLoading}
             />
           </View>
+          
           <View style={styles.inputBox}>
             <MaterialIcons name="email" size={20} color="#755B51" style={styles.icon} />
             <TextInput
@@ -52,8 +175,10 @@ export default function RegisterEmpresaScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!isLoading}
             />
           </View>
+          
           <View style={styles.inputBox}>
             <Feather name="phone" size={20} color="#755B51" style={styles.icon} />
             <TextInput
@@ -63,8 +188,10 @@ export default function RegisterEmpresaScreen() {
               value={telefono}
               onChangeText={setTelefono}
               keyboardType="phone-pad"
+              editable={!isLoading}
             />
           </View>
+          
           <View style={styles.inputBox}>
             <MaterialIcons name="lock" size={20} color="#755B51" style={styles.icon} />
             <TextInput
@@ -74,8 +201,10 @@ export default function RegisterEmpresaScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              editable={!isLoading}
             />
           </View>
+          
           <View style={styles.inputBox}>
             <MaterialIcons name="lock" size={20} color="#755B51" style={styles.icon} />
             <TextInput
@@ -85,8 +214,10 @@ export default function RegisterEmpresaScreen() {
               value={confirmar}
               onChangeText={setConfirmar}
               secureTextEntry
+              editable={!isLoading}
             />
           </View>
+          
           <View style={styles.inputBox}>
             <Feather name="edit" size={20} color="#755B51" style={styles.icon} />
             <TextInput
@@ -95,8 +226,10 @@ export default function RegisterEmpresaScreen() {
               placeholderTextColor="#755B51"
               value={desc}
               onChangeText={setDesc}
+              editable={!isLoading}
             />
           </View>
+          
           <View style={styles.inputBox}>
             <FontAwesome5 name="building" size={20} color="#755B51" style={styles.icon} />
             <TextInput
@@ -105,18 +238,24 @@ export default function RegisterEmpresaScreen() {
               placeholderTextColor="#755B51"
               value={fiscales}
               onChangeText={setFiscales}
+              editable={!isLoading}
             />
           </View>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Registrarse</Text>
+          
+          <TouchableOpacity 
+            style={[styles.button, isLoading && styles.buttonDisabled]} 
+            onPress={handleRegister}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Registrando...' : 'Registrarse'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
-
-import { Image } from 'react-native';
 
 const styles = StyleSheet.create({
   header: {
@@ -219,6 +358,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 14,
     marginBottom: 20,
+  },
+  buttonDisabled: {
+    backgroundColor: '#9A8A84',
   },
   buttonText: {
     color: '#fff',
