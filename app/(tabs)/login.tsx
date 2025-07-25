@@ -1,122 +1,72 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function RegisterScreen() {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = async () => {
-    console.log('handleRegister called');
-    
-    // Validaciones básicas
-    if (!email || !phone || !password) {
+  const handleLogin = async () => {
+    if (!email || !password) {
       Alert.alert('Error', 'Por favor completa todos los campos');
-      return;
-    }
-
-    if (password.length < 8) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
-      
-      // Preparar datos JSON como espera tu API
-      const requestData = {
-        email: email.toLowerCase().trim(),
-        phone: cleanPhone,
-        user_type: "worker",
-        password: password,
-      };
-
-      console.log('Enviando datos JSON:', requestData);
-
+      // Obtener todos los usuarios
       const response = await fetch('http://127.0.0.1:8000/users/', {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestData),
       });
 
-      console.log('Response status:', response.status);
-      
-      if (response.status === 200 || response.status === 201) {
-        try {
-          const result = await response.json();
-          console.log('API Response:', result);
+      if (response.ok) {
+        const users = await response.json();
+        console.log('Usuarios obtenidos:', users.length);
 
-          if (result === true) {
-            Alert.alert(
-              'Éxito', 
-              'Cuenta creada exitosamente',
-              [{
-                text: 'OK',
-                onPress: () => router.push('/login')
-              }]
-            );
-            
-            // Limpiar formulario
-            setEmail('');
-            setPhone('');
-            setPassword('');
-          } else {
-            Alert.alert('Error', 'No se pudo crear la cuenta. El email podría estar ya registrado.');
-          }
-        } catch (jsonError) {
-          // Si no puede parsear JSON, asumir éxito si status es 200/201
-          Alert.alert(
-            'Éxito', 
-            'Cuenta creada exitosamente',
-            [{
-              text: 'OK',
-              onPress: () => router.push('/login')
-            }]
-          );
+        // Buscar usuario con email y password coincidentes
+        const user = users.find((u: any) => 
+          u.email.toLowerCase() === email.toLowerCase().trim() && 
+          u.password === password
+        );
+
+        if (user) {
+          // Usuario encontrado - Login exitoso
+          console.log('Usuario loggeado:', user.email);
           
-          setEmail('');
-          setPhone('');
-          setPassword('');
-        }
-      } else if (response.status === 422) {
-        // Error de validación específico
-        try {
-          const errorData = await response.json();
-          console.log('Error 422 details:', errorData);
+          // Guardar datos del usuario en AsyncStorage
+          await AsyncStorage.setItem('userToken', 'logged_in_' + user.id);
+          await AsyncStorage.setItem('userEmail', user.email);
+          await AsyncStorage.setItem('userId', user.id.toString());
+          await AsyncStorage.setItem('isLoggedIn', 'true');
           
-          let errorMessage = 'Error de validación:\n';
-          if (errorData.detail && Array.isArray(errorData.detail)) {
-            errorData.detail.forEach((err: any) => {
-              errorMessage += `• ${err.msg}\n`;
-            });
-          } else {
-            errorMessage = 'Datos inválidos. Verifica el formato del email y teléfono.';
-          }
+          Alert.alert('Éxito', 'Inicio de sesión exitoso');
           
-          Alert.alert('Error de Validación', errorMessage);
-        } catch (parseError) {
-          Alert.alert('Error', 'Error de validación en los datos enviados');
+          // Navegar al HomeScreen
+          router.replace('/HomeScreen');
+        } else {
+          // Usuario no encontrado
+          Alert.alert('Error', 'Email o contraseña incorrectos');
         }
       } else {
-        Alert.alert('Error', `Error del servidor: ${response.status}`);
+        Alert.alert('Error', 'No se pudo conectar con el servidor');
       }
-    } catch (error: any) {
-      console.error('Error de registro:', error);
+    } catch (error) {
+      console.error('Error de login:', error);
       Alert.alert('Error', 'No se pudo conectar con el servidor. Verifica tu conexión.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoToLogin = () => {
-    router.push('/login');
+  const handleRegister = () => {
+    router.push('/register');
   };
 
   return (
@@ -126,19 +76,23 @@ export default function RegisterScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
     >
       <View style={styles.container}>
+        {/* Encabezado y saludo */}
         <View style={styles.topContainer}>
           <Image source={require('../assets/Logo_ChambApp.png')} style={styles.logo} />
-          <Text style={styles.titulo}>Registro</Text>
-          <Text style={styles.subtitulo}>Crea tu cuenta en ChambApp</Text>
+          <Text style={styles.hola}>¡Hola!</Text>
+          <Text style={styles.bienvenido}>Bienvenido a ChambApp</Text>
         </View>
 
+        {/* Sección inferior con scroll y inputs */}
         <View style={styles.bottomContainer}>
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+            <Text style={styles.loginTitle}>Iniciar Sesión</Text>
+
             <View style={styles.inputBox}>
               <MaterialIcons name="email" size={22} color="#755B51" style={styles.icon} />
               <TextInput
                 style={styles.input}
-                placeholder="Correo electrónico"
+                placeholder="email"
                 placeholderTextColor="#755B51"
                 value={email}
                 onChangeText={setEmail}
@@ -149,23 +103,10 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.inputBox}>
-              <MaterialIcons name="phone" size={22} color="#755B51" style={styles.icon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Teléfono (+1234567890)"
-                placeholderTextColor="#755B51"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                editable={!isLoading}
-              />
-            </View>
-
-            <View style={styles.inputBox}>
               <MaterialIcons name="lock" size={22} color="#755B51" style={styles.icon} />
               <TextInput
                 style={styles.input}
-                placeholder="Contraseña (mínimo 8 caracteres)"
+                placeholder="contraseña"
                 placeholderTextColor="#755B51"
                 value={password}
                 onChangeText={setPassword}
@@ -176,19 +117,18 @@ export default function RegisterScreen() {
 
             <TouchableOpacity 
               style={[styles.button, isLoading && styles.buttonDisabled]} 
-              onPress={handleRegister}
+              onPress={handleLogin}
               disabled={isLoading}
-              activeOpacity={0.7}
             >
               <Text style={styles.buttonText}>
-                {isLoading ? 'Registrando...' : 'Registrarse'}
+                {isLoading ? 'Ingresando...' : 'Ingresar'}
               </Text>
             </TouchableOpacity>
 
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
-              <TouchableOpacity onPress={handleGoToLogin} disabled={isLoading}>
-                <Text style={styles.loginLink}>Inicia sesión</Text>
+            <View style={styles.registerContainer}>
+              <Text style={styles.registerText}>¿No tienes cuenta? </Text>
+              <TouchableOpacity onPress={handleRegister} disabled={isLoading}>
+                <Text style={styles.registerLink}>Registrarse</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -204,25 +144,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#62483E',
   },
   topContainer: {
-    paddingTop: 50,
-    paddingBottom: 15,
+    paddingTop: 60,
+    paddingBottom: 20,
     alignItems: 'flex-start',
     paddingHorizontal: 32,
     backgroundColor: '#62483E',
   },
   logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 12,
+    width: 120,
+    height: 120,
+    marginBottom: 20,
     resizeMode: 'contain',
   },
-  titulo: {
+  hola: {
     color: '#fff',
-    fontSize: 30,
+    fontSize: 36,
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  subtitulo: {
+  bienvenido: {
     color: '#fff',
     fontSize: 18,
     marginBottom: 8,
@@ -246,6 +186,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     paddingBottom: 24,
+  },
+  loginTitle: {
+    fontSize: 28,
+    color: '#4C3A34',
+    fontWeight: '500',
+    marginBottom: 18,
+    marginTop: 8,
   },
   inputBox: {
     flexDirection: 'row',
@@ -284,19 +231,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 18,
   },
-  loginContainer: {
+  registerContainer: {
     flexDirection: 'row',
     marginTop: 8,
-    justifyContent: 'center',
   },
-  loginText: {
+  registerText: {
     color: '#755B51',
     fontSize: 15,
   },
-  loginLink: {
+  registerLink: {
     color: '#4C3A34',
     fontWeight: 'bold',
     fontSize: 15,
   },
 });
-

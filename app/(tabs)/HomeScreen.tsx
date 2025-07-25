@@ -1,5 +1,8 @@
+import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const JOBS = [
   {
@@ -31,6 +34,40 @@ const JOBS = [
 export default function HomeScreen() {
   const [search, setSearch] = useState('');
 
+  const handleLogout = async () => {
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro que deseas cerrar sesión?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Limpiar todos los datos del usuario
+              await AsyncStorage.multiRemove([
+                'userToken',
+                'userEmail',
+                'userId', 
+                'isLoggedIn'
+              ]);
+              
+              console.log('Sesión cerrada, redirigiendo a registro');
+              router.replace('/register');
+            } catch (error) {
+              console.error('Error logging out:', error);
+              Alert.alert('Error', 'No se pudo cerrar sesión');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Puedes activar el filtro si tu diseño lo permite
   // const filteredJobs = JOBS.filter(...);
   const filteredJobs = JOBS;
@@ -39,7 +76,12 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <Image source={require('../assets/Logo_ChambApp.png')} style={styles.logoChamb} />
+        <View style={styles.headerTop}>
+          <Image source={require('../assets/Logo_ChambApp.png')} style={styles.logoChamb} />
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <MaterialIcons name="logout" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
         <TextInput
           style={styles.searchInput}
           placeholder="buscar"
@@ -58,7 +100,7 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <Image source={item.logo} style={styles.logoJob} />
+              {/* <Image source={item.logo} style={styles.logoJob} /> */}
               <View style={{ flex: 1 }}>
                 <Text style={styles.jobTitle}>{item.title}</Text>
                 <Text style={styles.company}>{item.company}</Text>
@@ -74,7 +116,6 @@ export default function HomeScreen() {
           )}
         />
       </View>
-      {/* Aquí va tu navbar si la necesitas */}
     </View>
   );
 }
@@ -90,11 +131,21 @@ const styles = StyleSheet.create({
     paddingTop: 30,
     paddingBottom: 12,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   logoChamb: {
     width: 120,
     height: 36,
-    marginBottom: 16,
     resizeMode: 'contain',
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   searchInput: {
     backgroundColor: '#F2F0F0',
