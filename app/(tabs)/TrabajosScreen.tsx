@@ -4,9 +4,8 @@ import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 export default function TrabajosScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#62483E' }}>
-      {/* Encabezado */}
       <View style={styles.header}>
-        <Image source={require('../assets/Logo_ChambApp.png')} style={styles.logo} />
+        <Text style={styles.logo}>ChambApp</Text>
         <TextInput
           placeholder='Buscar en “Mis trabajos”'
           placeholderTextColor="#755B51"
@@ -14,11 +13,9 @@ export default function TrabajosScreen() {
         />
       </View>
 
-      {/* Contenedor gris */}
       <View style={styles.containerGray}>
         <Text style={styles.title}>Mis trabajos</Text>
-
-        <ScrollView showsVerticalScrollIndicator={false} style={{ width: '100%' }}>
+        <ScrollView style={{ width: '100%' }}>
           {/* Trabajo 1 */}
           <View style={styles.card}>
             <Image source={require('../assets/vaqueras.png')} style={styles.companyLogo} />
@@ -28,7 +25,6 @@ export default function TrabajosScreen() {
               <Text style={styles.status}>Estado: <Text style={{ color: '#755B51' }}>En Progreso</Text></Text>
             </View>
           </View>
-
           {/* Trabajo 2 */}
           <View style={styles.card}>
             <Image source={require('../assets/grupo_diferencial.png')} style={styles.companyLogo} />
@@ -41,16 +37,7 @@ export default function TrabajosScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
         </ScrollView>
-      </View>
-
-      {/* Barra de navegación */}
-      <View style={styles.tabBar}>
-        <Image source={require('../assets/home_icon.png')} style={styles.tabIcon} />
-        <Image source={require('../assets/briefcase_icon.png')} style={styles.tabIcon} />
-        <Image source={require('../assets/chat_icon.png')} style={styles.tabIcon} />
-        <Image source={require('../assets/profile_icon.png')} style={styles.tabIcon} />
       </View>
     </View>
   );
@@ -65,10 +52,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   logo: {
-    width: 135,
-    height: 35,
-    marginBottom: 18,
-    resizeMode: 'contain',
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 26,
+    marginBottom: 10,
   },
   searchBar: {
     backgroundColor: '#F2F0F0',
@@ -145,23 +132,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
     textAlign: 'center',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#F2F0F0',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    height: 65,
-    paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowOffset: { width: 0, height: -1 },
-  },
-  tabIcon: {
-    width: 35,
-    height: 35,
-    resizeMode: 'contain',
   },
 });

@@ -7,7 +7,7 @@ export default function ChatDetailScreen() {
     <View style={{ flex: 1, backgroundColor: '#D2D2D2' }}>
       {/* Header */}
       <View style={styles.header}>
-        <Image source={require('../assets/avatar_header.png')} style={styles.avatar} />
+        <Image source={require('../../assets/avatar_header.png')} style={styles.avatar} />
         <View style={{ marginLeft: 8 }}>
           <Text style={styles.groupName}>Grupo Diferencial</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
@@ -21,22 +21,20 @@ export default function ChatDetailScreen() {
       <View style={styles.messagesContainer}>
         {/* Mensaje recibido */}
         <View style={styles.row}>
-          <Image source={require('../assets/grupo_diferencial.png')} style={styles.msgAvatar} />
+          <Image source={require('../../assets/grupo_diferencial.png')} style={styles.msgAvatar} />
           <View style={styles.bubbleReceived}>
             <Text style={styles.textReceived}>¡Hola!, ¿Qué tal Karen?</Text>
           </View>
         </View>
-
         {/* Mensaje enviado */}
         <View style={[styles.row, { justifyContent: 'flex-end' }]}>
           <View style={styles.bubbleSent}>
             <Text style={styles.textSent}>¡Hola!</Text>
           </View>
         </View>
-
         {/* Mensaje recibido largo */}
         <View style={styles.row}>
-          <Image source={require('../assets/grupo_diferencial.png')} style={styles.msgAvatar} />
+          <Image source={require('../../assets/grupo_diferencial.png')} style={styles.msgAvatar} />
           <View style={styles.bubbleReceivedLarge}>
             <Text style={styles.textReceived}>
               Karen, te escribimos de Grupo Diferencial{"\n"}
@@ -45,24 +43,21 @@ export default function ChatDetailScreen() {
             </Text>
           </View>
         </View>
-
         {/* Mensaje enviado */}
         <View style={[styles.row, { justifyContent: 'flex-end' }]}>
           <View style={styles.bubbleSent}>
             <Text style={styles.textSent}>Claro, ¿Dónde seria?</Text>
           </View>
         </View>
-
         {/* Mensaje recibido corto */}
         <View style={styles.row}>
-          <Image source={require('../assets/grupo_diferencial.png')} style={styles.msgAvatar} />
+          <Image source={require('../../assets/grupo_diferencial.png')} style={styles.msgAvatar} />
           <View style={styles.bubbleReceivedShort}>
             <Text style={styles.textReceived}>
               A lado De Karen´s{"\n"}San Miguelito.
             </Text>
           </View>
         </View>
-
         {/* Mensaje enviado */}
         <View style={[styles.row, { justifyContent: 'flex-end' }]}>
           <View style={styles.bubbleSent}>

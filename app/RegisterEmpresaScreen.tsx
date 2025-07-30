@@ -1,6 +1,6 @@
 import { Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function RegisterEmpresaScreen() {
   const [empresa, setEmpresa] = useState('');
@@ -17,11 +17,11 @@ export default function RegisterEmpresaScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Image source={require('../assets/Logo_ChambApp.png')} style={styles.logo} />
+            <Image source={require('./assets/Logo_ChambApp.png')} style={styles.logo} />
             <Text style={styles.brand}>ChambApp</Text>
           </View>
           {/* Icono empresa */}
-          <Image source={require('../assets/icon_empresa.png')} style={styles.coffee} />
+          <Image source={require('./assets/icon_empresa.png')} style={styles.coffee} />
         </View>
 
         {/* Cuerpo */}
@@ -115,8 +115,6 @@ export default function RegisterEmpresaScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-import { Image } from 'react-native';
 
 const styles = StyleSheet.create({
   header: {

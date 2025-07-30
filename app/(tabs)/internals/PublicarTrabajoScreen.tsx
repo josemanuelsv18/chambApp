@@ -18,7 +18,7 @@ export default function PerfilScreen() {
             <MaterialIcons name="settings" size={28} color="#57443D" />
           </TouchableOpacity>
         </View>
-        <Image source={require('../assets/karen_avatar.png')} style={styles.avatar} />
+        <Image source={require('../../assets/karen_avatar.png')} style={styles.avatar} />
 
         {/* Usuario y correo */}
         <Text style={styles.label}>Usuario</Text>
@@ -31,7 +31,7 @@ export default function PerfilScreen() {
           <Text style={styles.label}>Email</Text>
         </View>
         <View style={styles.chipRow}>
-          <Text style={styles.chip}>Karen Sanchez</Text>
+          <Text style={[styles.chip, { marginRight: 9 }]}>Karen Sanchez</Text>
           <Text style={styles.chip}>karen@gmail.com</Text>
         </View>
 
@@ -44,7 +44,7 @@ export default function PerfilScreen() {
         {/* Disponibilidad */}
         <Text style={styles.label}>Disponibilidad</Text>
         <View style={styles.chipRow}>
-          <Text style={styles.chip}>Fines de semana</Text>
+          <Text style={[styles.chip, { marginRight: 9 }]}>Fines de semana</Text>
           <Text style={styles.chip}>virtual</Text>
         </View>
 
@@ -52,10 +52,10 @@ export default function PerfilScreen() {
         <View style={styles.ratingRow}>
           <Text style={styles.label}>RATING</Text>
           <View style={styles.stars}>
-            <FontAwesome name="star" size={22} color="#E7E67D" />
-            <FontAwesome name="star" size={22} color="#E7E67D" />
-            <FontAwesome name="star" size={22} color="#E7E67D" />
-            <FontAwesome name="star" size={22} color="#E7E67D" />
+            <FontAwesome name="star" size={22} color="#E7E67D" style={styles.starMargin} />
+            <FontAwesome name="star" size={22} color="#E7E67D" style={styles.starMargin} />
+            <FontAwesome name="star" size={22} color="#E7E67D" style={styles.starMargin} />
+            <FontAwesome name="star" size={22} color="#E7E67D" style={styles.starMargin} />
             <FontAwesome name="star-o" size={22} color="#4C3A34" />
           </View>
           <View style={styles.chipScore}>
@@ -119,7 +119,6 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 9,
     marginVertical: 6,
     alignItems: 'center',
   },
@@ -130,7 +129,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     color: '#755B51',
     fontSize: 15,
-    marginRight: 7,
+    marginRight: 0,
+    marginBottom: 5,
   },
   chipLarge: {
     backgroundColor: '#F2F0F0',
@@ -140,17 +140,20 @@ const styles = StyleSheet.create({
     color: '#755B51',
     fontSize: 14,
     flex: 1,
-    marginRight: 7,
+    marginBottom: 5,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 16,
-    gap: 7,
   },
   stars: {
     flexDirection: 'row',
     marginLeft: 12,
+    alignItems: 'center',
+  },
+  starMargin: {
+    marginRight: 7,
   },
   chipScore: {
     backgroundColor: '#F2F0F0',
