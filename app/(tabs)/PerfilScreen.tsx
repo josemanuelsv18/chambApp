@@ -1,8 +1,81 @@
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { API_URL } from '../../config/api';
 
 export default function PerfilScreen() {
+  const handleLogout = async () => {
+    console.log('Botón presionado');
+    Alert.alert(
+      'Cerrar sesión',
+      '¿Estás seguro que deseas cerrar sesión?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Cerrar sesión',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Obtener el token de acceso
+              const accessToken = await AsyncStorage.getItem('accessToken');
+              
+              if (accessToken) {
+                console.log('Token:', accessToken);
+                // Llamar al endpoint de logout con manejo de errores
+                const response = await fetch(`${API_URL}/auth/logout`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                });
+                console.log('Respuesta API:', response);
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+              }
+
+              // Limpiar todos los datos de sesión
+              await AsyncStorage.multiRemove([
+                'accessToken',
+                'refreshToken',
+                'userToken',
+                'userEmail', 
+                'userId',
+                'userType',
+                'isLoggedIn'
+              ]);
+
+              console.log('Sesión cerrada exitosamente');
+              
+              // Redirigir a la pantalla de login - IMPORTANTE: usar navigate o replace según necesidad
+              router.replace('/login'); // Asegúrate que esta ruta es correcta
+            } catch (error) {
+              console.error('Error during logout:', error);
+              // Aunque falle la llamada a la API, limpiar datos locales
+              await AsyncStorage.multiRemove([
+                'accessToken',
+                'refreshToken',
+                'userToken',
+                'userEmail', 
+                'userId',
+                'userType',
+                'isLoggedIn'
+              ]);
+              router.replace('/login'); // Asegúrate que esta ruta es correcta
+            }
+          },
+        },
+      ],
+      { cancelable: false } // Evita que el usuario cierre el alert tocando fuera
+    );
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#62483E' }}>
       {/* Header */}
@@ -62,6 +135,16 @@ export default function PerfilScreen() {
             <Text style={styles.score}>4/5</Text>
           </View>
         </View>
+
+        {/* Botón de Logout */}
+      <TouchableOpacity 
+        style={styles.logoutButton} 
+        onPress={handleLogout}
+        activeOpacity={0.7} // Feedback visual al presionar
+      >
+        <MaterialIcons name="logout" size={20} color="#fff" />
+        <Text style={styles.logoutText}>Cerrar sesión</Text>
+      </TouchableOpacity>
       </View>
     </View>
   );
@@ -164,5 +247,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 17,
     textAlign: 'center',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#C64545',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: 20,
+    gap: 8,
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });

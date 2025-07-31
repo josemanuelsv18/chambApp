@@ -1,191 +1,186 @@
-import { MaterialIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { API_URL } from '../../config/api';
 
-export default function HomeScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function IndexScreen() {
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleLogin = () => {
-    // Aquí conectas a tu backend
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      // Verificar si hay una sesión guardada
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      
+      console.log('Tokens encontrados:', {
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+        accessToken: accessToken ? accessToken.substring(0, 20) + '...' : null,
+        refreshToken: refreshToken ? refreshToken.substring(0, 20) + '...' : null,
+      });
+
+      if(!accessToken || !refreshToken) {
+        // Si no hay tokens, redirigir a la pantalla de inicio de sesión
+        console.log('No hay sesión activa, redirigiendo a login...');
+        await clearUserData();
+        router.replace('/(auth)/login');
+        return;
+      }
+
+      // Verificar si los tokens son validos
+      const isValid = await validateAccessToken(accessToken);
+      
+      if (isValid){
+        //Token valido, usuario autenticado
+        console.log('Token válido, redirigiendo a la pantalla principal...');
+        router.replace('/internals/HomeScreen');
+      }else{
+        // Token invalido, Intentar renovarlo
+        console.log('Access token invalido, intentando renovar...');
+        const refreshSuccess = await refreshAccessToken(refreshToken);
+        
+        if(refreshSuccess){
+          console.log('Token renovado exitosamente, redirigiendo a la pantalla principal...');
+          router.replace('/internals/HomeScreen');
+        }else{
+          console.log('No se pudo renovar el token, redirigiendo a login...');
+          await clearUserData();
+          router.replace('/(auth)/login');
+        }
+      }
+
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+      // En caso de error, redirigir a la pantalla de inicio de sesión
+      await clearUserData();
+      router.replace('/(auth)/login');
+    } finally{
+      setIsLoading(false);
+    }
   };
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: '#62483E' }}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
-    >
-      <View style={styles.container}>
-        {/* Encabezado y saludo */}
-        <View style={styles.topContainer}>
-          <Image source={require('../assets/Logo_ChambApp.png')} style={styles.logo} />
-          <Text style={styles.hola}>¡Hola!</Text>
-          <Text style={styles.bienvenido}>Bienvenido a ChambApp</Text>
-        </View>
+  const validateAccessToken = async (token: string): Promise<boolean> => {
+    try{
+      console.log('Validando token con URL:', `${API_URL}/auth/me`);
+      
+      const response = await fetch(`${API_URL}/auth/me`, {
+        method: 'GET',
+        headers:{
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-        {/* Sección inferior con scroll y inputs */}
-        <View style={styles.bottomContainer}>
-          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-            <Text style={styles.loginTitle}>Iniciar Sesión</Text>
+      console.log('Response status:', response.status);
+      
+      if (response.ok){
+        const userData = await response.json();
+        console.log('Datos del usuario obtenidos:', userData);
+        
+        //Guardar datos del usuario actualizados
+        await AsyncStorage.multiSet([
+          ['userEmail', userData.email],
+          ['userId', userData.user_id.toString()], // Cambié de id a user_id
+          ['userType', userData.user_type],
+          ['isLoggedIn', 'true'],
+        ]);
+        
+        return true;
+      }
+      
+      console.log('Token inválido, response not ok');
+      return false;
+    } catch (error) {
+      console.error('Error validating access token:', error);
+      return false;
+    }
+  };
 
-            <View style={styles.inputBox}>
-              <MaterialIcons name="email" size={22} color="#755B51" style={styles.icon} />
-              <TextInput
-                style={styles.input}
-                placeholder="email"
-                placeholderTextColor="#755B51"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+  const refreshAccessToken = async (refreshToken: string): Promise<boolean> => {
+    try{
+      console.log('Renovando token con URL:', `${API_URL}/auth/refresh`);
+      
+      const response = await fetch(`${API_URL}/auth/refresh`,{
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
 
-            <View style={styles.inputBox}>
-              <MaterialIcons name="lock" size={22} color="#755B51" style={styles.icon} />
-              <TextInput
-                style={styles.input}
-                placeholder="contraseña"
-                placeholderTextColor="#755B51"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
+      console.log('Refresh response status:', response.status);
 
-            <TouchableOpacity style={styles.linkContainer}>
-              <Text style={styles.forgot}>¿olvidaste tu contraseña?</Text>
-            </TouchableOpacity>
+      if (response.ok){
+        const tokenData = await response.json();
+        console.log('Nuevos tokens obtenidos');
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-              <Text style={styles.buttonText}>Ingresar</Text>
-            </TouchableOpacity>
+        //Guardar los nuevos tokens
+        await AsyncStorage.multiSet([
+          ['accessToken', tokenData.access_token],
+          ['refreshToken', tokenData.refresh_token],
+        ]);
 
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-              <TouchableOpacity /* onPress={...} */>
-                <Text style={styles.registerLink}>Registrarse</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
+        return await validateAccessToken(tokenData.access_token);
+      }
+      
+      console.log('No se pudo renovar el token');
+      return false;
+    } catch (error){
+      console.error('Error refreshing access token:', error);
+      return false;
+    }
+  };
+
+  const clearUserData = async () => {
+    try {
+      await AsyncStorage.multiRemove([
+        'accessToken',
+        'refreshToken',
+        'userToken',
+        'userEmail', 
+        'userId',
+        'userType',
+        'isLoggedIn'
+      ]);
+      console.log('Datos de usuario limpiados');
+    } catch (error) {
+      console.error('Error clearing user data:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#62483E" />
+        <Text style={styles.loadingText}>Verificando sesión...</Text>
       </View>
-    </KeyboardAvoidingView>
+    );
+  }
+
+  // Este componente solo muestra loading, la navegación es automática
+  return (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#62483E" />
+      <Text style={styles.loadingText}>Cargando...</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: '#62483E',
-  },
-  topContainer: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    alignItems: 'flex-start',
-    paddingHorizontal: 32,
-    backgroundColor: '#62483E',
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
-    resizeMode: 'contain',
-  },
-  hola: {
-    color: '#fff',
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  bienvenido: {
-    color: '#fff',
-    fontSize: 18,
-    marginBottom: 8,
-  },
-  bottomContainer: {
-    flex: 1,
-    backgroundColor: '#D2D2D2',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    padding: 28,
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 7,
-    justifyContent: 'flex-start',
+    backgroundColor: '#F5F5F5',
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingBottom: 24,
-  },
-  loginTitle: {
-    fontSize: 28,
-    color: '#4C3A34',
-    fontWeight: '500',
-    marginBottom: 18,
-    marginTop: 8,
-  },
-  inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F0F0',
-    borderRadius: 25,
-    marginBottom: 18,
-    paddingHorizontal: 16,
-    width: '100%',
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#D2D2D2',
-  },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 17,
-    color: '#4C3A34',
-  },
-  forgot: {
-    color: '#755B51',
-    fontSize: 14,
-    marginBottom: 18,
-    textAlign: 'right',
-  },
-  linkContainer: {
-    width: '100%',
-    alignItems: 'flex-end',
-  },
-  button: {
-    backgroundColor: '#57443D',
-    paddingVertical: 13,
-    borderRadius: 25,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 14,
-    marginTop: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 18,
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  registerText: {
-    color: '#755B51',
-    fontSize: 15,
-  },
-  registerLink: {
-    color: '#4C3A34',
-    fontWeight: 'bold',
-    fontSize: 15,
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#62483E',
   },
 });

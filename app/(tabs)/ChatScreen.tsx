@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ChatScreen() {
   return (
@@ -34,4 +34,77 @@ export default function ChatScreen() {
   );
 }
 
-// ...Tus estilos igual
+const styles = StyleSheet.create({
+  header: {
+    height: 60,
+    backgroundColor: '#755B51',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logo: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  innerContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  searchBar: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 20,
+    color: '#62483E',
+  },
+  chatCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+  },
+  groupName: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#62483E',
+  },
+  lastMessageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  lastMessage: {
+    color: '#755B51',
+    flex: 1,
+  },
+  badge: {
+    backgroundColor: '#E4572E',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+});
