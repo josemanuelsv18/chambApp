@@ -25,14 +25,15 @@ export default function TabLayout() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: any;
           let IconComponent: any = Ionicons;
-          
+
           if (route.name === 'internals/HomeScreen') {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'TrabajosScreen') {
             IconComponent = MaterialIcons;
             iconName = focused ? 'work' : 'work-outline';
-          } else if (route.name === 'ChatScreen') {
-            iconName = focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
+          } else if (route.name === 'CompanyScreen') {
+            iconName = focused ? 'business' : 'business-outline';
+            IconComponent = Ionicons;
           } else if (route.name === 'PerfilScreen') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -62,9 +63,9 @@ export default function TabLayout() {
         }} 
       />
       <Tabs.Screen 
-        name="ChatScreen" 
+        name="CompanyScreen" 
         options={{ 
-          title: 'Chat',
+          title: 'Empresa',
           headerShown: false,
         }} 
       />

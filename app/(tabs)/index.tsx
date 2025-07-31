@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { API_URL } from '../../config/api';
 
+// !!! No se logra mantener la sesión si el usuario entra y sale de la app !!!
+
 export default function IndexScreen() {
   const [isLoading, setIsLoading] = useState(true);
 

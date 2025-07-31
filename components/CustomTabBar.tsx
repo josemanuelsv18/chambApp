@@ -15,7 +15,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: TabBarP
   const tabs = [
     { name: 'index', title: 'Inicio', icon: 'home-outline', activeIcon: 'home' },
     { name: 'TrabajosScreen', title: 'Trabajos', icon: 'work-outline', activeIcon: 'work', isMaterial: true },
-    { name: 'ChatScreen', title: 'Chat', icon: 'chatbubble-ellipses-outline', activeIcon: 'chatbubble-ellipses' },
+    { name: 'CompanyScreen', title: 'Chat', icon: 'chatbubble-ellipses-outline', activeIcon: 'chatbubble-ellipses' },
     { name: 'PerfilScreen', title: 'Perfil', icon: 'person-outline', activeIcon: 'person' },
   ];
 

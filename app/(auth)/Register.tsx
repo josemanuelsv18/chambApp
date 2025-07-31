@@ -54,6 +54,29 @@ export default function RegisterScreen() {
     setIsLoading(true);
 
     try {
+      // Verificar si el email ya existe
+      console.log('Verificando email existente...');
+      const emailExists = await checkEmailExists(email.toLowerCase().trim());
+      
+      if (emailExists) {
+        Alert.alert('Error', 'Este correo electrónico ya está registrado');
+        setIsLoading(false);
+        return;
+      }
+
+      // Verificar si el teléfono ya existe
+      console.log('Verificando teléfono existente...');
+      const phoneExists = await checkPhoneExists(phone.trim());
+      
+      if (phoneExists) {
+        Alert.alert('Error', 'Este número de teléfono ya está registrado');
+        setIsLoading(false);
+        return;
+      }
+
+      // Si no existen, proceder con el registro
+      console.log('Email y teléfono disponibles, procediendo con el registro...');
+      
       // Registro del usuario usando /users/
       console.log('Registrando usuario con URL:', `${API_URL}/users/`);
       
@@ -101,6 +124,54 @@ export default function RegisterScreen() {
     }
   };
 
+  const checkEmailExists = async (email: string): Promise<boolean> => {
+    try {
+      console.log('Verificando email:', email);
+      const response = await fetch(`${API_URL}/users/exists/email/${encodeURIComponent(email)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const exists = await response.json();
+        console.log('Email exists response:', exists);
+        return exists === true;
+      } else {
+        console.error('Error checking email:', response.status);
+        return false; // En caso de error, permitir continuar
+      }
+    } catch (error) {
+      console.error('Error checking email existence:', error);
+      return false; // En caso de error, permitir continuar
+    }
+  };
+
+  const checkPhoneExists = async (phone: string): Promise<boolean> => {
+    try {
+      console.log('Verificando teléfono:', phone);
+      const response = await fetch(`${API_URL}/users/exists/phone/${encodeURIComponent(phone)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const exists = await response.json();
+        console.log('Phone exists response:', exists);
+        return exists === true;
+      } else {
+        console.error('Error checking phone:', response.status);
+        return false; // En caso de error, permitir continuar
+      }
+    } catch (error) {
+      console.error('Error checking phone existence:', error);
+      return false; // En caso de error, permitir continuar
+    }
+  };
+
   const performAutoLogin = async (email: string, password: string) => {
     try {
       console.log('Iniciando login automático...');
@@ -143,7 +214,7 @@ export default function RegisterScreen() {
               text: 'Continuar',
               onPress: () => {
                 console.log('Redirigiendo a HomeScreen...');
-                router.replace('/internals/HomeScreen'); // Corregido aquí
+                router.replace('/internals/HomeScreen');
               }
             }
           ]
@@ -285,13 +356,6 @@ export default function RegisterScreen() {
               />
             </View>
 
-            {/* <View style={styles.userTypeInfo}>
-              <MaterialIcons name="work" size={20} color="#755B51" />
-              <Text style={styles.userTypeText}>
-                Te registrarás como trabajador
-              </Text>
-            </View> */}
-
             <TouchableOpacity 
               style={[styles.button, isLoading && styles.buttonDisabled]} 
               onPress={handleRegister}
@@ -390,23 +454,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     color: '#4C3A34',
-  },
-  userTypeInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F4F8',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 15,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#B0D4E0',
-  },
-  userTypeText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#4C3A34',
-    fontWeight: '500',
   },
   button: {
     backgroundColor: '#57443D',
