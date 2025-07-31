@@ -8,6 +8,7 @@ import { API_URL } from '../../config/api';
 export default function PerfilScreen() {
   const handleLogout = async () => {
     console.log('Botón presionado');
+    
     Alert.alert(
       'Cerrar sesión',
       '¿Estás seguro que deseas cerrar sesión?',
@@ -21,12 +22,14 @@ export default function PerfilScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('Iniciando proceso de logout...');
+              
               // Obtener el token de acceso
               const accessToken = await AsyncStorage.getItem('accessToken');
               
               if (accessToken) {
-                console.log('Token:', accessToken);
-                // Llamar al endpoint de logout con manejo de errores
+                console.log('Token encontrado, llamando API...');
+                // Llamar al endpoint de logout
                 const response = await fetch(`${API_URL}/auth/logout`, {
                   method: 'POST',
                   headers: {
@@ -34,9 +37,11 @@ export default function PerfilScreen() {
                     'Content-Type': 'application/json',
                   },
                 });
-                console.log('Respuesta API:', response);
+                
+                console.log('Respuesta de logout API:', response.status);
+                
                 if (!response.ok) {
-                  throw new Error(`HTTP error! status: ${response.status}`);
+                  console.warn('La API devolvió un error, pero continuamos con la limpieza local');
                 }
               }
 
@@ -51,28 +56,37 @@ export default function PerfilScreen() {
                 'isLoggedIn'
               ]);
 
-              console.log('Sesión cerrada exitosamente');
+              console.log('Datos locales limpiados, redirigiendo...');
               
-              // Redirigir a la pantalla de login - IMPORTANTE: usar navigate o replace según necesidad
-              router.replace('/login'); // Asegúrate que esta ruta es correcta
+              // Redirigir a la pantalla de login
+              router.replace('/(auth)/login');
+              
             } catch (error) {
               console.error('Error during logout:', error);
+              
               // Aunque falle la llamada a la API, limpiar datos locales
-              await AsyncStorage.multiRemove([
-                'accessToken',
-                'refreshToken',
-                'userToken',
-                'userEmail', 
-                'userId',
-                'userType',
-                'isLoggedIn'
-              ]);
-              router.replace('/login'); // Asegúrate que esta ruta es correcta
+              try {
+                await AsyncStorage.multiRemove([
+                  'accessToken',
+                  'refreshToken',
+                  'userToken',
+                  'userEmail', 
+                  'userId',
+                  'userType',
+                  'isLoggedIn'
+                ]);
+                
+                console.log('Datos limpiados tras error, redirigiendo...');
+                router.replace('/(auth)/login');
+              } catch (clearError) {
+                console.error('Error limpiando datos:', clearError);
+                Alert.alert('Error', 'Hubo un problema cerrando la sesión. Reinicia la aplicación.');
+              }
             }
           },
         },
       ],
-      { cancelable: false } // Evita que el usuario cierre el alert tocando fuera
+      { cancelable: false }
     );
   };
 
@@ -137,14 +151,14 @@ export default function PerfilScreen() {
         </View>
 
         {/* Botón de Logout */}
-      <TouchableOpacity 
-        style={styles.logoutButton} 
-        onPress={handleLogout}
-        activeOpacity={0.7} // Feedback visual al presionar
-      >
-        <MaterialIcons name="logout" size={20} color="#fff" />
-        <Text style={styles.logoutText}>Cerrar sesión</Text>
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.logoutButton} 
+          onPress={handleLogout}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="logout" size={20} color="#fff" />
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

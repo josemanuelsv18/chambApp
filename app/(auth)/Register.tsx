@@ -141,7 +141,10 @@ export default function RegisterScreen() {
           [
             {
               text: 'Continuar',
-              onPress: () => router.replace('/internals/HomeScreen')
+              onPress: () => {
+                console.log('Redirigiendo a HomeScreen...');
+                router.replace('/internals/HomeScreen'); // Corregido aquí
+              }
             }
           ]
         );
