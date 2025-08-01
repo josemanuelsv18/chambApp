@@ -1,0 +1,455 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  header: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#62483E',
+    paddingTop: 35,
+    height: 80,
+  },
+  logo: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 26,
+    letterSpacing: 0.5,
+  },
+  label: {
+    fontSize: 16,
+    color: '#4C3A34',
+    fontWeight: '600',
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  profileContainer: {
+    backgroundColor: '#D2D2D2',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    marginTop: -22,
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 30,
+  },
+
+  // Header del perfil
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 15,
+  },
+  nameSection: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4C3A34',
+    marginBottom: 2,
+  },
+  userType: {
+    fontSize: 14,
+    color: '#755B51',
+    marginBottom: 8,
+  },
+  ratingSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingsButton: {
+    padding: 8,
+  },
+
+  // Cards de información básica
+  basicInfoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 10,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#4C3A34',
+    fontWeight: '600',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+
+  // Contenedor de detalles
+  detailsContainer: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4C3A34',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+
+  // Filas de dos columnas
+  twoColumnRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 10,
+  },
+  detailCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  detailContent: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 11,
+    color: '#755B51',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  detailValue: {
+    fontSize: 13,
+    color: '#4C3A34',
+    fontWeight: '600',
+  },
+
+  // Cards especiales
+  bioCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    flexDirection: 'row',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  bioText: {
+    fontSize: 13,
+    color: '#4C3A34',
+    lineHeight: 18,
+  },
+  statusCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  // Estrellas
+  starsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 12,
+    color: '#755B51',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+
+  // Estados
+  statusApproved: {
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  statusPending: {
+    color: '#FF9800',
+    fontWeight: 'bold',
+  },
+  statusRejected: {
+    color: '#F44336',
+    fontWeight: 'bold',
+  },
+
+  // Botón de logout
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#C64545',
+    borderRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    marginTop: 10,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+
+  // Pantalla de bienvenida
+  centeredContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+    paddingVertical: 40,
+  },
+  welcomeText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#4C3A34',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  verificationText: {
+    fontSize: 16,
+    color: '#755B51',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 30,
+  },
+  
+  completeProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#57443D',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    marginBottom: 40,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    minWidth: 200,
+  },
+  completeProfileText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 18,
+  },
+  
+  benefitsContainer: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  benefitText: {
+    fontSize: 16,
+    color: '#4C3A34',
+    marginLeft: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+
+  // Modales
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(98, 72, 62, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#4C3A34',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#755B51',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  accountTypeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F0F0',
+    borderRadius: 15,
+    padding: 16,
+    marginBottom: 12,
+    width: '100%',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  accountTypeContent: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  accountTypeTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4C3A34',
+    marginBottom: 4,
+  },
+  accountTypeDescription: {
+    fontSize: 14,
+    color: '#755B51',
+    lineHeight: 18,
+  },
+
+  // Formularios
+  formModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  formScrollView: {
+    maxHeight: 500,
+  },
+  input: {
+    backgroundColor: '#F2F0F0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#4C3A34',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginBottom: 12,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  pickerContainer: {
+    backgroundColor: '#F2F0F0',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginBottom: 12,
+  },
+  picker: {
+    color: '#4C3A34',
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F0F0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginBottom: 12,
+    gap: 10,
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#4C3A34',
+    flex: 1,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#755B51',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: '#755B51',
+    fontWeight: '600',
+  },
+  submitButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#57443D',
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+  },
+});
