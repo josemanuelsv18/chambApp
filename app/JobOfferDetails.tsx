@@ -1,4 +1,4 @@
-import { MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -30,15 +30,46 @@ export default function JobOfferDetails() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   type WorkerData = { id: number; [key: string]: any };
   const [workerData, setWorkerData] = useState<WorkerData | null>(null);
+  
+  // Nuevo estado para datos de la empresa
+  const [companyData, setCompanyData] = useState<any>(null);
+  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
 
   // Cargar datos cuando se monta el componente
   useEffect(() => {
+    loadCompanyData();
     if (user && user.user_type === 'worker') {
       checkIfUserHasApplied();
     } else {
       setIsLoadingApplication(false);
     }
   }, [user, params.id]);
+
+  // Función para cargar datos de la empresa
+  const loadCompanyData = async () => {
+    try {
+      setIsLoadingCompany(true);
+      const accessToken = await AsyncStorage.getItem('accessToken');
+
+      const companyResponse = await fetch(`${API_URL}/companies/${params.companyId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (companyResponse.ok) {
+        const company = await companyResponse.json();
+        setCompanyData(company);
+      } else {
+        console.error('Error fetching company data');
+      }
+    } catch (error) {
+      console.error('Error loading company data:', error);
+    } finally {
+      setIsLoadingCompany(false);
+    }
+  };
 
   // Función para verificar si el usuario ya aplicó
   const checkIfUserHasApplied = async () => {
@@ -88,6 +119,26 @@ export default function JobOfferDetails() {
     } finally {
       setIsLoadingApplication(false);
     }
+  };
+
+  // Función para renderizar estrellas
+  const renderStars = (rating: string | number) => {
+    const numRating = parseFloat(rating.toString());
+    const stars = [];
+    
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <FontAwesome
+          key={i}
+          name={i <= numRating ? "star" : i - 0.5 <= numRating ? "star-half-o" : "star-o"}
+          size={16}
+          color="#E7E67D"
+          style={{ marginRight: 2 }}
+        />
+      );
+    }
+    
+    return stars;
   };
 
   // Función para formatear fecha
@@ -224,13 +275,39 @@ export default function JobOfferDetails() {
       <ScrollView style={{ flex: 1, backgroundColor: '#D2D2D2' }} showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
           {/* Logo de la empresa */}
-          {params.logo && (
-            <Image source={{ uri: params.logo as string }} style={styles.logo} />
+          {(companyData?.logo || params.logo) && (
+            <Image 
+              source={{ uri: (companyData?.logo || params.logo) as string }} 
+              style={styles.logo} 
+            />
           )}
           
           {/* Título y empresa */}
           <Text style={styles.title}>{params.title}</Text>
-          <Text style={styles.company}>{params.companyName}</Text>
+          <Text style={styles.company}>
+            {companyData?.company_name || params.companyName}
+          </Text>
+
+          {/* Rating de la empresa */}
+          {companyData && !isLoadingCompany && (
+            <View style={styles.ratingContainer}>
+              <View style={styles.starsContainer}>
+                {renderStars(companyData.rating || "0.00")}
+                <Text style={styles.ratingText}>
+                  ({parseFloat(companyData.rating || "0.00").toFixed(1)})
+                </Text>
+              </View>
+              <Text style={styles.ratingLabel}>Calificación de la empresa</Text>
+            </View>
+          )}
+
+          {/* Loading de empresa */}
+          {isLoadingCompany && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#57443D" />
+              <Text style={styles.loadingText}>Cargando información de la empresa...</Text>
+            </View>
+          )}
 
           {/* Chips principales */}
           <View style={styles.chipRow}>
@@ -472,10 +549,42 @@ const styles = StyleSheet.create({
   company: {
     fontSize: 16,
     color: '#755B51',
-    marginBottom: 16,
+    marginBottom: 8,
     textAlign: 'center',
     fontWeight: '500',
   },
+
+  // Estilos para el rating de la empresa
+  ratingContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  ratingText: {
+    fontSize: 14,
+    color: '#755B51',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  ratingLabel: {
+    fontSize: 12,
+    color: '#755B51',
+    fontWeight: '400',
+  },
+
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -557,7 +666,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F0F0',
     borderRadius: 12,
     padding: 16,
-    marginTop: 20,
+    marginBottom: 16,
     gap: 10,
   },
   loadingText: {

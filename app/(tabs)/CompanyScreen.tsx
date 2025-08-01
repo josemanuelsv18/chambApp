@@ -1,10 +1,12 @@
 import { API_URL } from '@/config/api';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import React, { useState } from 'react';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Modal,
@@ -19,6 +21,32 @@ import {
 import { Calendar } from 'react-native-calendars';
 import CompanyProtection from '../../components/CompanyProtection';
 import { useAuth } from '../../hooks/useAuth';
+
+interface JobOffer {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  start_time: string;
+  end_time: string;
+  required_workers: number;
+  hourly_rate: number;
+  total_payment: number;
+  experience_level: string;
+  status: string;
+  company_id: number;
+}
+
+interface Company {
+  id: number;
+  company_name: string;
+  logo: string;
+}
 
 export default function CompanyScreen() {
   const { user } = useAuth(); // Obtener información del usuario
@@ -49,6 +77,64 @@ export default function CompanyScreen() {
   const [selectedDates, setSelectedDates] = useState<{ [date: string]: any }>({});
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
+
+  // Estados para los datos de la empresa y trabajos
+  const [jobOffers, setJobOffers] = useState<JobOffer[]>([]);
+  const [companyData, setCompanyData] = useState<Company | null>(null);
+  const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+
+  // Cargar datos cuando se monta el componente
+  useEffect(() => {
+    if (user && user.user_type === 'company') {
+      loadCompanyJobOffers();
+    }
+  }, [user]);
+
+  // Función para cargar las ofertas de trabajo de la empresa
+  const loadCompanyJobOffers = async () => {
+    try {
+      setIsLoadingJobs(true);
+      const accessToken = await AsyncStorage.getItem('accessToken');
+
+      // 1. Obtener datos de la empresa del usuario logueado
+      const companyResponse = await fetch(`${API_URL}/companies/by_user/${user?.user_id}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!companyResponse.ok) {
+        throw new Error('Error fetching company data');
+      }
+
+      const company = await companyResponse.json();
+      setCompanyData(company);
+
+      // 2. Obtener ofertas de trabajo de la empresa
+      const jobOffersResponse = await fetch(`${API_URL}/job_offers/by_company/${company.id}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (jobOffersResponse.ok) {
+        const jobOffersData = await jobOffersResponse.json();
+        setJobOffers(jobOffersData);
+      } else if (jobOffersResponse.status === 404) {
+        setJobOffers([]); // No hay trabajos publicados
+      } else {
+        throw new Error('Error fetching job offers');
+      }
+
+    } catch (error) {
+      console.error('Error loading company job offers:', error);
+      Alert.alert('Error', 'No se pudieron cargar los trabajos publicados');
+    } finally {
+      setIsLoadingJobs(false);
+    }
+  };
 
   // Función para manejar la selección de rango de fechas
   const handleDayPress = (day: any) => {
@@ -202,6 +288,49 @@ export default function CompanyScreen() {
     return `${hours}:${minutes}`;
   };
 
+  // Funciones para formatear datos en la lista
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'available': return 'Disponible';
+      case 'in_progress': return 'En progreso';
+      case 'completed': return 'Completado';
+      case 'cancelled': return 'Cancelado';
+      case 'paused': return 'Pausado';
+      default: return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'available': return '#E8F5E8';
+      case 'in_progress': return '#E3F2FD';
+      case 'completed': return '#F3E5F5';
+      case 'cancelled': return '#FFEBEE';
+      case 'paused': return '#FFF3E0';
+      default: return '#F5F5F5';
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'events': return 'Eventos';
+      case 'catering': return 'Catering';
+      case 'cleaning': return 'Limpieza';
+      case 'delivery': return 'Delivery';
+      case 'other': return 'Otros';
+      default: return category;
+    }
+  };
+
   const handleCreateJob = () => {
     setShowCreateJobModal(true);
   };
@@ -264,13 +393,13 @@ export default function CompanyScreen() {
     }
 
     // Verificar que tenemos company_id
-    if (!user?.company_id) {
+    if (!companyData?.id) {
       Alert.alert('Error', 'No se pudo obtener la información de la empresa');
       return;
     }
 
     const jobData = {
-      company_id: user.company_id, // Usar el company_id del usuario logueado
+      company_id: companyData.id, // Usar el company_id obtenido de la API
       title: formData.title,
       description: formData.description,
       category: formData.category,
@@ -303,6 +432,8 @@ export default function CompanyScreen() {
       if (response.ok) {
         Alert.alert('Éxito', 'Trabajo publicado correctamente');
         handleCloseModal();
+        // Recargar los trabajos publicados
+        loadCompanyJobOffers();
       } else {
         const errorData = await response.json();
         console.log('Error de la API:', errorData);
@@ -316,7 +447,7 @@ export default function CompanyScreen() {
 
   return (
     <CompanyProtection>
-      <View style={{ flex: 1, backgroundColor: '#62443E' }}>
+      <View style={{ flex: 1, backgroundColor: '#62483E' }}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>ChambApp</Text>
@@ -332,132 +463,85 @@ export default function CompanyScreen() {
               <Text style={styles.createJobText}>Publicar nuevo trabajo</Text>
             </TouchableOpacity>
 
-            {/* Estadísticas rápidas */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>12</Text>
-                <Text style={styles.statLabel}>Trabajos activos</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>45</Text>
-                <Text style={styles.statLabel}>Postulaciones</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>8</Text>
-                <Text style={styles.statLabel}>Completados</Text>
-              </View>
-            </View>
-
             <Text style={styles.sectionTitle}>Mis trabajos publicados</Text>
 
-            {/* Trabajo 1 - Activo */}
-            <View style={styles.jobCard}>
-              <Image source={require('../assets/Logo_ChambApp.png')} style={styles.companyLogo} />
-              <View style={styles.jobInfo}>
-                <Text style={styles.jobTitle}>Mesero para evento</Text>
-                <Text style={styles.jobDescription}>
-                  Se busca mesero con experiencia para evento corporativo
-                </Text>
-                <View style={styles.jobDetails}>
-                  <Text style={styles.detail}>$15.00/h</Text>
-                  <Text style={styles.detail}>2 postulaciones</Text>
-                </View>
-                <View style={styles.statusRow}>
-                  <View style={[styles.statusBadge, styles.activeStatus]}>
-                    <Text style={styles.statusText}>Activo</Text>
-                  </View>
-                  <Text style={styles.publishDate}>Publicado: 25/07/2025</Text>
-                </View>
+            {/* Loading de trabajos */}
+            {isLoadingJobs ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#57443D" />
+                <Text style={styles.loadingText}>Cargando trabajos publicados...</Text>
               </View>
-              <TouchableOpacity style={styles.moreButton}>
-                <MaterialIcons name="more-vert" size={24} color="#755B51" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Trabajo 2 - En progreso */}
-            <View style={styles.jobCard}>
-              <Image source={require('../assets/Logo_ChambApp.png')} style={styles.companyLogo} />
-              <View style={styles.jobInfo}>
-                <Text style={styles.jobTitle}>Ayudante de cocina</Text>
-                <Text style={styles.jobDescription}>
-                  Apoyo en cocina para restaurante durante fin de semana
+            ) : jobOffers.length === 0 ? (
+              // Estado vacío
+              <View style={styles.emptyContainer}>
+                <MaterialIcons name="work-off" size={64} color="#755B51" />
+                <Text style={styles.emptyText}>No has publicado trabajos aún</Text>
+                <Text style={styles.emptySubtext}>
+                  Publica tu primer trabajo usando el botón de arriba
                 </Text>
-                <View style={styles.jobDetails}>
-                  <Text style={styles.detail}>$250.00 total</Text>
-                  <Text style={styles.detail}>1 trabajador asignado</Text>
-                </View>
-                <View style={styles.statusRow}>
-                  <View style={[styles.statusBadge, styles.progressStatus]}>
-                    <Text style={styles.statusText}>En progreso</Text>
-                  </View>
-                  <Text style={styles.publishDate}>Inicia: 28/07/2025</Text>
-                </View>
               </View>
-              <TouchableOpacity style={styles.moreButton}>
-                <MaterialIcons name="more-vert" size={24} color="#755B51" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Trabajo 3 - Completado */}
-            <View style={styles.jobCard}>
-              <Image source={require('../assets/Logo_ChambApp.png')} style={styles.companyLogo} />
-              <View style={styles.jobInfo}>
-                <Text style={styles.jobTitle}>Repartidor delivery</Text>
-                <Text style={styles.jobDescription}>
-                  Entrega de pedidos en zona metropolitana
-                </Text>
-                <View style={styles.jobDetails}>
-                  <Text style={styles.detail}>$3.50/h</Text>
-                  <Text style={styles.detail}>Trabajo completado</Text>
-                </View>
-                <View style={styles.statusRow}>
-                  <View style={[styles.statusBadge, styles.completedStatus]}>
-                    <Text style={styles.statusText}>Completado</Text>
+            ) : (
+              // Lista de trabajos publicados
+              jobOffers.map((job) => (
+                <TouchableOpacity 
+                  key={job.id} 
+                  style={styles.jobCard}
+                  onPress={() => router.push(`/JobDetailsScreen?jobId=${job.id}`)}
+                >
+                  {companyData?.logo ? (
+                    <Image source={{ uri: companyData.logo }} style={styles.companyLogo} />
+                  ) : (
+                    <View style={styles.placeholderLogo}>
+                      <MaterialIcons name="business" size={24} color="#755B51" />
+                    </View>
+                  )}
+                  <View style={styles.jobInfo}>
+                    <Text style={styles.jobTitle}>{job.title}</Text>
+                    <Text style={styles.jobDescription} numberOfLines={2}>
+                      {job.description}
+                    </Text>
+                    <View style={styles.jobDetails}>
+                      <Text style={styles.detail}>
+                        {job.hourly_rate > 0 ? `$${job.hourly_rate}/h` : `$${job.total_payment} total`}
+                      </Text>
+                      <Text style={styles.detail}>
+                        {getCategoryLabel(job.category)}
+                      </Text>
+                    </View>
+                    <View style={styles.jobDetails}>
+                      <Text style={styles.detail}>
+                        {job.required_workers} trabajador{job.required_workers !== 1 ? 'es' : ''}
+                      </Text>
+                      <Text style={styles.detail}>
+                        {formatDate(job.start_date)} - {formatDate(job.end_date)}
+                      </Text>
+                    </View>
+                    <View style={styles.statusRow}>
+                      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(job.status) }]}>
+                        <Text style={styles.statusText}>{getStatusLabel(job.status)}</Text>
+                      </View>
+                      <Text style={styles.publishDate}>
+                        Publicado: {formatDate(job.created_at)}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.ratingRow}>
-                    <FontAwesome name="star" size={14} color="#E7E67D" />
-                    <Text style={styles.ratingText}>4.8</Text>
+                  <View style={styles.arrowContainer}>
+                    <MaterialIcons name="chevron-right" size={24} color="#755B51" />
                   </View>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.moreButton}>
-                <MaterialIcons name="more-vert" size={24} color="#755B51" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Trabajo 4 - Pausado */}
-            <View style={styles.jobCard}>
-              <Image source={require('../assets/Logo_ChambApp.png')} style={styles.companyLogo} />
-              <View style={styles.jobInfo}>
-                <Text style={styles.jobTitle}>Promotor de ventas</Text>
-                <Text style={styles.jobDescription}>
-                  Promoción de productos en centro comercial
-                </Text>
-                <View style={styles.jobDetails}>
-                  <Text style={styles.detail}>$12.00/h</Text>
-                  <Text style={styles.detail}>0 postulaciones</Text>
-                </View>
-                <View style={styles.statusRow}>
-                  <View style={[styles.statusBadge, styles.pausedStatus]}>
-                    <Text style={styles.statusText}>Pausado</Text>
-                  </View>
-                  <Text style={styles.publishDate}>Pausado: 20/07/2025</Text>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.moreButton}>
-                <MaterialIcons name="more-vert" size={24} color="#755B51" />
-              </TouchableOpacity>
-            </View>
+                </TouchableOpacity>
+              ))
+            )}
           </ScrollView>
         </View>
 
-        {/* Modal para crear nuevo trabajo */}
+        {/* Modal para crear nuevo trabajo - mismo que antes */}
         <Modal
           visible={showCreateJobModal}
           transparent={true}
           animationType="fade"
           onRequestClose={handleCloseModal}
         >
+          {/* Todo el contenido del modal igual que antes */}
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
@@ -786,41 +870,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 18,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    gap: 10,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4C3A34',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#755B51',
-    textAlign: 'center',
-  },
   sectionTitle: {
     fontSize: 20,
     color: '#4C3A34',
     fontWeight: '600',
     marginBottom: 16,
   },
+
+  // Estados de loading y vacío
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#755B51',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4C3A34',
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#755B51',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
   jobCard: {
     backgroundColor: '#fff',
     borderRadius: 18,
@@ -840,6 +927,15 @@ const styles = StyleSheet.create({
     marginRight: 12,
     backgroundColor: '#EEE',
   },
+  placeholderLogo: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   jobInfo: {
     flex: 1,
   },
@@ -857,8 +953,9 @@ const styles = StyleSheet.create({
   },
   jobDetails: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 6,
     gap: 16,
+    flexWrap: 'wrap',
   },
   detail: {
     fontSize: 13,
@@ -869,23 +966,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 4,
   },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-  },
-  activeStatus: {
-    backgroundColor: '#E8F5E8',
-  },
-  progressStatus: {
-    backgroundColor: '#E3F2FD',
-  },
-  completedStatus: {
-    backgroundColor: '#F3E5F5',
-  },
-  pausedStatus: {
-    backgroundColor: '#FFF3E0',
   },
   statusText: {
     fontSize: 12,
@@ -896,21 +982,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#755B51',
   },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-    color: '#755B51',
-    fontWeight: '500',
-  },
   moreButton: {
     padding: 4,
   },
+  arrowContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingLeft: 8,
+  },
 
-  // Estilos del Modal
+  // Estilos del Modal - mantener todos los anteriores
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(98, 72, 62, 0.5)',

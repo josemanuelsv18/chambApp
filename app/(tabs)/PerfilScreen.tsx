@@ -55,7 +55,7 @@ interface CompleteCompanyProfile {
   logo?: string;
   description?: string;
   rating: string;
-  total_jobs_posted: number;
+  total_jobs_posted: number; // Este ahora será dinámico
   balance: string;
   status: string;
 }
@@ -120,7 +120,15 @@ export default function PerfilScreen() {
           });
           
           if (companyResponse.ok) {
-            profileData.company = await companyResponse.json();
+            const companyData = await companyResponse.json();
+            
+            // Obtener el número real de trabajos publicados
+            const jobOffersCount = await getCompanyJobOffersCount(companyData.id, accessToken ?? '');
+            
+            profileData.company = {
+              ...companyData,
+              total_jobs_posted: jobOffersCount
+            };
           }
         }
         
@@ -131,6 +139,32 @@ export default function PerfilScreen() {
       Alert.alert('Error', 'No se pudo cargar el perfil del usuario');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Nueva función para obtener el conteo real de trabajos publicados
+  const getCompanyJobOffersCount = async (companyId: number, accessToken: string): Promise<number> => {
+    try {
+      const response = await fetch(`${API_URL}/job_offers/by_company/${companyId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const jobOffers = await response.json();
+        return Array.isArray(jobOffers) ? jobOffers.length : 0;
+      } else if (response.status === 404) {
+        // No hay trabajos publicados
+        return 0;
+      } else {
+        console.error('Error fetching job offers count:', response.status);
+        return 0;
+      }
+    } catch (error) {
+      console.error('Error getting job offers count:', error);
+      return 0;
     }
   };
 
@@ -335,7 +369,7 @@ export default function PerfilScreen() {
                 businessType={userProfile.company.business_type}
                 address={userProfile.company.address}
                 contactPerson={userProfile.company.contact_person}
-                totalJobsPosted={userProfile.company.total_jobs_posted}
+                totalJobsPosted={userProfile.company.total_jobs_posted} // Ahora es dinámico
                 status={userProfile.company.status}
                 description={userProfile.company.description}
               />
