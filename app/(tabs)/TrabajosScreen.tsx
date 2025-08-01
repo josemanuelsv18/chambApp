@@ -1,5 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -409,16 +410,22 @@ export default function TrabajosScreen() {
           </Text>
         </View> */}
 
-        {/* Contenido con gesture handler */}
-        <PanGestureHandler onGestureEvent={gestureHandler}>
-          <Animated.View style={[{ flex: 1, width: '100%' }, animatedStyle]}>
-            <ScrollView 
-              style={{ width: '100%' }}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-              }
-            >
+        {/* Contenido con gesture handler - Movido el ScrollView fuera del PanGestureHandler */}
+        <ScrollView 
+          style={{ width: '100%', flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl 
+              refreshing={isRefreshing} 
+              onRefresh={onRefresh}
+              colors={['#57443D']} // Android
+              tintColor="#57443D" // iOS
+              title="Actualizando..." // iOS
+            />
+          }
+        >
+          <PanGestureHandler onGestureEvent={gestureHandler}>
+            <Animated.View style={[{ width: '100%' }, animatedStyle]}>
               {selectedTab === 'applications' ? (
                 // Sección de Applications
                 filteredApplications.length === 0 ? (
@@ -443,7 +450,11 @@ export default function TrabajosScreen() {
                     const company = jobOffer ? companies[jobOffer.company_id] : null;
                     
                     return (
-                      <View key={`app-${application.id}`} style={styles.card}>
+                      <TouchableOpacity 
+                        key={`app-${application.id}`} 
+                        style={styles.card}
+                        onPress={() => router.push(`/ApplicationDetails?applicationId=${application.id}`)}
+                      >
                         {company?.logo ? (
                           <Image source={{ uri: company.logo }} style={styles.companyLogo} />
                         ) : (
@@ -475,7 +486,7 @@ export default function TrabajosScreen() {
                             </TouchableOpacity>
                           )}
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })
                 )
@@ -503,7 +514,11 @@ export default function TrabajosScreen() {
                     const company = jobOffer ? companies[jobOffer.company_id] : null;
                     
                     return (
-                      <View key={`job-${job.id}`} style={styles.card}>
+                      <TouchableOpacity 
+                        key={`job-${job.id}`} 
+                        style={styles.card}
+                        onPress={() => router.push(`/WorkerJobDetails?jobId=${job.id}`)}
+                      >
                         {company?.logo ? (
                           <Image source={{ uri: company.logo }} style={styles.companyLogo} />
                         ) : (
@@ -535,14 +550,14 @@ export default function TrabajosScreen() {
                             </TouchableOpacity>
                           )}
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })
                 )
               )}
-            </ScrollView>
-          </Animated.View>
-        </PanGestureHandler>
+            </Animated.View>
+          </PanGestureHandler>
+        </ScrollView>
       </View>
     </View>
   );
