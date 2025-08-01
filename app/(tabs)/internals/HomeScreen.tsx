@@ -1,8 +1,8 @@
 import JobOfferCard from '@/components/JobOfferCard';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { API_URL } from '../../../config/api';
 
 interface JobOffer {
@@ -31,6 +31,7 @@ interface JobOffer {
 export default function HomeScreen() {
   const [jobOffers, setJobOffers] = useState<JobOffer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadJobOffers();
@@ -63,7 +64,14 @@ export default function HomeScreen() {
       setIsLoading(false);
     }
   };
-  
+
+  // Función para refrescar con pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadJobOffers();
+    setRefreshing(false);
+  }, []);
+
   const handleCardPress = (jobOffer: JobOffer) => {
     router.push({
       pathname: '/JobOfferDetails',
@@ -116,7 +124,17 @@ export default function HomeScreen() {
       <View style={styles.containerGray}>
         <Text style={styles.title}>Empleos disponibles</Text>
         
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#57443D']}
+              tintColor="#57443D"
+            />
+          }
+        >
           {jobOffers.length > 0 ? (
             jobOffers.map((jobOffer) => (
               <JobOfferCard

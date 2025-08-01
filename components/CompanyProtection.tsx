@@ -95,9 +95,6 @@ const CompanyProtection: React.FC<CompanyProtectionProps> = ({ children }) => {
       </View>
     );
   }
-
-  // Si es company, mostrar el contenido
-  console.log('Usuario es company, mostrando CompanyScreen');
   return <>{children}</>;
 };
 

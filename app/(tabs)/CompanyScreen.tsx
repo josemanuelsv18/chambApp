@@ -1,11 +1,14 @@
 import { API_URL } from '@/config/api';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import React, { useState } from 'react';
 import {
   Alert,
   Image,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,9 +16,12 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import CompanyProtection from '../../components/CompanyProtection';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function CompanyScreen() {
+  const { user } = useAuth(); // Obtener información del usuario
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -30,9 +36,171 @@ export default function CompanyScreen() {
     hourly_rate: '',
     total_payment: '',
     experience_level: 'beginner',
-    daily_hours: '', // Campo extra para calcular total_payment cuando se usa hourly_rate
+    daily_hours: '',
   });
-  const [paymentType, setPaymentType] = useState('hourly'); // 'hourly' o 'total'
+  const [paymentType, setPaymentType] = useState('hourly');
+  
+  // Estados para los selectores
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  
+  // Estados para las fechas/horas seleccionadas
+  const [selectedDates, setSelectedDates] = useState<{ [date: string]: any }>({});
+  const [startTime, setStartTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(new Date());
+
+  // Función para manejar la selección de rango de fechas
+  const handleDayPress = (day: any) => {
+    const dateString = day.dateString;
+    
+    // Si no hay fechas seleccionadas o ya hay un rango completo, empezar nuevo
+    if (!formData.start_date || (formData.start_date && formData.end_date)) {
+      const newSelectedDates = {
+        [dateString]: {
+          selected: true,
+          startingDay: true,
+          color: '#57443D',
+          textColor: 'white'
+        }
+      };
+      
+      setSelectedDates(newSelectedDates);
+      setFormData({
+        ...formData,
+        start_date: dateString,
+        end_date: ''
+      });
+    } 
+    // Si solo hay fecha de inicio, establecer fecha de fin
+    else if (formData.start_date && !formData.end_date) {
+      const startDate = new Date(formData.start_date + 'T00:00:00'); // Agregar hora para evitar problemas de zona horaria
+      const endDate = new Date(dateString + 'T00:00:00');
+      
+      // Asegurar que la fecha de fin no sea anterior a la de inicio
+      if (endDate < startDate) {
+        Alert.alert('Error', 'La fecha de fin no puede ser anterior a la fecha de inicio');
+        return;
+      }
+      
+      // Crear el rango de fechas
+      const newSelectedDates: { [key: string]: any } = {};
+      const currentDate = new Date(startDate); // Usar la fecha de inicio correcta
+      
+      while (currentDate <= endDate) {
+        const currentDateString = currentDate.toISOString().split('T')[0];
+        
+        if (currentDateString === formData.start_date) {
+          newSelectedDates[currentDateString] = {
+            selected: true,
+            startingDay: true,
+            color: '#57443D',
+            textColor: 'white'
+          };
+        } else if (currentDateString === dateString) {
+          newSelectedDates[currentDateString] = {
+            selected: true,
+            endingDay: true,
+            color: '#57443D',
+            textColor: 'white'
+          };
+        } else {
+          newSelectedDates[currentDateString] = {
+            selected: true,
+            color: '#8B6F62',
+            textColor: 'white'
+          };
+        }
+        
+        // Avanzar correctamente un día
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+      }
+      
+      setSelectedDates(newSelectedDates);
+      setFormData({
+        ...formData,
+        end_date: dateString
+      });
+    }
+  };
+
+  // Funciones para manejar cambios en los time pickers
+  const onStartTimeChange = (event: any, selectedTime?: Date) => {
+    const currentTime = selectedTime || startTime;
+    setShowStartTimePicker(Platform.OS === 'ios');
+    setStartTime(currentTime);
+    
+    // Formatear hora para el formulario (HH:MM:SS)
+    const formattedTime = currentTime.toTimeString().split(' ')[0];
+    setFormData({...formData, start_time: formattedTime});
+  };
+
+  const onEndTimeChange = (event: any, selectedTime?: Date) => {
+    const currentTime = selectedTime || endTime;
+    setShowEndTimePicker(Platform.OS === 'ios');
+    setEndTime(currentTime);
+    
+    // Formatear hora para el formulario (HH:MM:SS)
+    const formattedTime = currentTime.toTimeString().split(' ')[0];
+    setFormData({...formData, end_time: formattedTime});
+  };
+
+  // Funciones para mostrar los pickers
+  const showDatePickerModal = () => {
+    setShowDatePicker(true);
+  };
+
+  const showStartTimePickerModal = () => {
+    setShowStartTimePicker(true);
+  };
+
+  const showEndTimePickerModal = () => {
+    setShowEndTimePicker(true);
+  };
+
+  // Funciones para formatear las fechas/horas mostradas
+  const formatDisplayDateRange = () => {
+    if (!formData.start_date) return 'Seleccionar rango de fechas';
+    
+    // Usar directamente las fechas en formato string para evitar problemas de zona horaria
+    const startDateParts = formData.start_date.split('-');
+    const startDate = new Date(
+      parseInt(startDateParts[0]), 
+      parseInt(startDateParts[1]) - 1, 
+      parseInt(startDateParts[2])
+    );
+    
+    const startFormatted = startDate.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    if (!formData.end_date) {
+      return `Desde: ${startFormatted}`;
+    }
+    
+    const endDateParts = formData.end_date.split('-');
+    const endDate = new Date(
+      parseInt(endDateParts[0]), 
+      parseInt(endDateParts[1]) - 1, 
+      parseInt(endDateParts[2])
+    );
+    
+    const endFormatted = endDate.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    return `${startFormatted} - ${endFormatted}`;
+  };
+
+  const formatDisplayTime = (timeString: string) => {
+    if (!timeString) return 'Seleccionar hora';
+    const [hours, minutes] = timeString.split(':');
+    return `${hours}:${minutes}`;
+  };
 
   const handleCreateJob = () => {
     setShowCreateJobModal(true);
@@ -57,6 +225,10 @@ export default function CompanyScreen() {
       daily_hours: '',
     });
     setPaymentType('hourly');
+    // Resetear fechas y horas
+    setSelectedDates({});
+    setStartTime(new Date());
+    setEndTime(new Date());
   };
 
   const calculateTotalPayment = () => {
@@ -64,7 +236,7 @@ export default function CompanyScreen() {
       const startDate = new Date(formData.start_date);
       const endDate = new Date(formData.end_date);
       const timeDiff = Math.abs(endDate.getTime() - startDate.getTime());
-      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 para incluir el día inicial
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
       
       const total = parseFloat(formData.hourly_rate) * parseFloat(formData.daily_hours) * daysDiff;
       return total.toFixed(2);
@@ -91,8 +263,14 @@ export default function CompanyScreen() {
       return;
     }
 
-    // Preparar datos para enviar
+    // Verificar que tenemos company_id
+    if (!user?.company_id) {
+      Alert.alert('Error', 'No se pudo obtener la información de la empresa');
+      return;
+    }
+
     const jobData = {
+      company_id: user.company_id, // Usar el company_id del usuario logueado
       title: formData.title,
       description: formData.description,
       category: formData.category,
@@ -105,27 +283,40 @@ export default function CompanyScreen() {
       hourly_rate: paymentType === 'hourly' ? parseFloat(formData.hourly_rate) : 0,
       total_payment: paymentType === 'hourly' ? parseFloat(calculateTotalPayment()) : parseFloat(formData.total_payment),
       experience_level: formData.experience_level,
+      status: "available" // Siempre "available" al crear
     };
 
     console.log('Datos del trabajo a crear:', jobData);
     
-    // Aquí harías la llamada a la API
-    // await createJobOffer(jobData);
-    const createJobOffer = await fetch(`${API_URL}/job_offers`,{
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(jobData),
-    });
+    try {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      
+      const response = await fetch(`${API_URL}/job_offers`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`, // Agregar autorización
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jobData),
+      });
 
-    Alert.alert('Éxito', 'Trabajo publicado correctamente');
-    handleCloseModal();
+      if (response.ok) {
+        Alert.alert('Éxito', 'Trabajo publicado correctamente');
+        handleCloseModal();
+      } else {
+        const errorData = await response.json();
+        console.log('Error de la API:', errorData);
+        Alert.alert('Error', 'No se pudo publicar el trabajo');
+      }
+    } catch (error) {
+      console.log('Error de conexión:', error);
+      Alert.alert('Error', 'Error de conexión: ' + error);
+    }
   };
 
   return (
     <CompanyProtection>
-      <View style={{ flex: 1, backgroundColor: '#62483E' }}>
+      <View style={{ flex: 1, backgroundColor: '#62443E' }}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>ChambApp</Text>
@@ -157,7 +348,6 @@ export default function CompanyScreen() {
               </View>
             </View>
 
-            {/* Sección de trabajos publicados */}
             <Text style={styles.sectionTitle}>Mis trabajos publicados</Text>
 
             {/* Trabajo 1 - Activo */}
@@ -323,49 +513,125 @@ export default function CompanyScreen() {
                   onChangeText={(text) => setFormData({...formData, location: text})}
                 />
 
-                {/* Fechas */}
-                <View style={styles.row}>
-                  <View style={styles.halfWidth}>
-                    <Text style={styles.label}>Fecha inicio *</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="YYYY-MM-DD"
-                      value={formData.start_date}
-                      onChangeText={(text) => setFormData({...formData, start_date: text})}
-                    />
-                  </View>
-                  <View style={styles.halfWidth}>
-                    <Text style={styles.label}>Fecha fin *</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="YYYY-MM-DD"
-                      value={formData.end_date}
-                      onChangeText={(text) => setFormData({...formData, end_date: text})}
-                    />
-                  </View>
-                </View>
+                {/* Selector de Rango de Fechas */}
+                <Text style={styles.label}>Fechas del trabajo *</Text>
+                <TouchableOpacity style={styles.dateTimeButton} onPress={showDatePickerModal}>
+                  <MaterialIcons name="date-range" size={20} color="#755B51" />
+                  <Text style={styles.dateTimeText}>
+                    {formatDisplayDateRange()}
+                  </Text>
+                </TouchableOpacity>
 
-                {/* Horarios */}
+                {/* Modal del Calendar */}
+                <Modal
+                  visible={showDatePicker}
+                  transparent={true}
+                  animationType="slide"
+                  onRequestClose={() => setShowDatePicker(false)}
+                >
+                  <View style={styles.calendarModalOverlay}>
+                    <View style={styles.calendarContainer}>
+                      <View style={styles.calendarHeader}>
+                        <Text style={styles.calendarTitle}>Seleccionar fechas</Text>
+                        <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                          <MaterialIcons name="close" size={24} color="#4C3A34" />
+                        </TouchableOpacity>
+                      </View>
+                      
+                      <Calendar
+                        onDayPress={handleDayPress}
+                        markingType={'period'}
+                        markedDates={selectedDates}
+                        minDate={new Date().toISOString().split('T')[0]}
+                        theme={{
+                          backgroundColor: '#ffffff',
+                          calendarBackground: '#ffffff',
+                          textSectionTitleColor: '#4C3A34',
+                          selectedDayBackgroundColor: '#57443D',
+                          selectedDayTextColor: '#ffffff',
+                          todayTextColor: '#57443D',
+                          dayTextColor: '#4C3A34',
+                          textDisabledColor: '#d9e1e8',
+                          dotColor: '#57443D',
+                          selectedDotColor: '#ffffff',
+                          arrowColor: '#57443D',
+                          disabledArrowColor: '#d9e1e8',
+                          monthTextColor: '#4C3A34',
+                          indicatorColor: '#57443D',
+                          textDayFontWeight: '500',
+                          textMonthFontWeight: 'bold',
+                          textDayHeaderFontWeight: '600',
+                          textDayFontSize: 16,
+                          textMonthFontSize: 18,
+                          textDayHeaderFontSize: 14
+                        }}
+                      />
+                      
+                      <View style={styles.calendarFooter}>
+                        <Text style={styles.calendarInstruction}>
+                          {!formData.start_date 
+                            ? "Toca una fecha para seleccionar el inicio" 
+                            : !formData.end_date 
+                            ? "Toca otra fecha para seleccionar el final"
+                            : `Seleccionado: ${formatDisplayDateRange()}`}
+                        </Text>
+                        {formData.start_date && formData.end_date && (
+                          <TouchableOpacity 
+                            style={styles.confirmButton} 
+                            onPress={() => setShowDatePicker(false)}
+                          >
+                            <Text style={styles.confirmButtonText}>Confirmar</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                </Modal>
+
+                {/* Selectores de Hora */}
                 <View style={styles.row}>
                   <View style={styles.halfWidth}>
                     <Text style={styles.label}>Hora inicio *</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="HH:MM:SS"
-                      value={formData.start_time}
-                      onChangeText={(text) => setFormData({...formData, start_time: text})}
-                    />
+                    <TouchableOpacity style={styles.dateTimeButton} onPress={showStartTimePickerModal}>
+                      <MaterialIcons name="access-time" size={20} color="#755B51" />
+                      <Text style={styles.dateTimeText}>
+                        {formatDisplayTime(formData.start_time)}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                   <View style={styles.halfWidth}>
                     <Text style={styles.label}>Hora fin *</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="HH:MM:SS"
-                      value={formData.end_time}
-                      onChangeText={(text) => setFormData({...formData, end_time: text})}
-                    />
+                    <TouchableOpacity style={styles.dateTimeButton} onPress={showEndTimePickerModal}>
+                      <MaterialIcons name="access-time" size={20} color="#755B51" />
+                      <Text style={styles.dateTimeText}>
+                        {formatDisplayTime(formData.end_time)}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
+
+                {/* Time Pickers */}
+                {showStartTimePicker && (
+                  <DateTimePicker
+                    testID="startTimePicker"
+                    value={startTime}
+                    mode="time"
+                    is24Hour={true}
+                    display="default"
+                    onChange={onStartTimeChange}
+                  />
+                )}
+
+                {showEndTimePicker && (
+                  <DateTimePicker
+                    testID="endTimePicker"
+                    value={endTime}
+                    mode="time"
+                    is24Hour={true}
+                    display="default"
+                    onChange={onEndTimeChange}
+                  />
+                )}
 
                 {/* Trabajadores requeridos */}
                 <Text style={styles.label}>Trabajadores requeridos *</Text>
@@ -719,6 +985,25 @@ const styles = StyleSheet.create({
   halfWidth: {
     flex: 1,
   },
+  
+  // Nuevos estilos para los selectores de fecha/hora
+  dateTimeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F0F0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    gap: 10,
+  },
+  dateTimeText: {
+    fontSize: 16,
+    color: '#4C3A34',
+    flex: 1,
+  },
+  
   paymentTypeContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -793,6 +1078,62 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 16,
     color: '#fff',
+    fontWeight: '600',
+  },
+
+  // Nuevos estilos para el calendar
+  calendarModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  calendarContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  calendarTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4C3A34',
+  },
+  calendarFooter: {
+    marginTop: 15,
+    alignItems: 'center',
+  },
+  calendarInstruction: {
+    fontSize: 14,
+    color: '#755B51',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  confirmButton: {
+    backgroundColor: '#57443D',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
