@@ -120,8 +120,8 @@ export default function PerfilScreen() {
       if (userResponse.ok) {
         const userData = await userResponse.json();
         
+        // Solo establecer userProfile, no mostrar modal automáticamente
         if (!userData.is_verified) {
-          setShowVerificationModal(true);
           setUserProfile(userData);
           return;
         }
@@ -657,10 +657,37 @@ export default function PerfilScreen() {
           </ScrollView>
         ) : (
           <View style={styles.centeredContent}>
+            <MaterialIcons name="account-circle" size={80} color="#755B51" style={{ marginBottom: 20 }} />
             <Text style={styles.welcomeText}>¡Bienvenido a ChambApp!</Text>
             <Text style={styles.verificationText}>
               Para completar tu perfil, necesitas verificar tu cuenta seleccionando el tipo de usuario.
             </Text>
+            
+            {/* Botón para activar modal de verificación */}
+            <TouchableOpacity 
+              style={styles.completeProfileButton}
+              onPress={() => setShowVerificationModal(true)}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="person-add" size={24} color="#fff" />
+              <Text style={styles.completeProfileText}>Completar Perfil</Text>
+            </TouchableOpacity>
+            
+            {/* Información adicional */}
+            <View style={styles.benefitsContainer}>
+              <View style={styles.benefitItem}>
+                <MaterialIcons name="work" size={20} color="#57443D" />
+                <Text style={styles.benefitText}>Accede a trabajos disponibles</Text>
+              </View>
+              <View style={styles.benefitItem}>
+                <MaterialIcons name="star" size={20} color="#57443D" />
+                <Text style={styles.benefitText}>Construye tu reputación</Text>
+              </View>
+              <View style={styles.benefitItem}>
+                <MaterialIcons name="security" size={20} color="#57443D" />
+                <Text style={styles.benefitText}>Pagos seguros garantizados</Text>
+              </View>
+            </View>
           </View>
         )}
       </View>
@@ -1137,10 +1164,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 40,
   },
   welcomeText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#4C3A34',
     textAlign: 'center',
@@ -1150,7 +1178,58 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#755B51',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 24,
+    marginBottom: 30,
+  },
+  
+  // Botón para completar perfil
+  completeProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#57443D',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    marginBottom: 40,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    minWidth: 200,
+  },
+  completeProfileText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 18,
+  },
+  
+  // Contenedor de beneficios
+  benefitsContainer: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  benefitText: {
+    fontSize: 16,
+    color: '#4C3A34',
+    marginLeft: 16,
+    fontWeight: '500',
+    flex: 1,
   },
 
   // Estilos de modales
@@ -1302,29 +1381,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     fontWeight: '600',
-  },
-
-  // Nuevos estilos para rating y estados
-  starsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingText: {
-    fontSize: 12,
-    color: '#755B51',
-    marginLeft: 8,
-    fontWeight: '500',
-  },
-  statusApproved: {
-    color: '#4CAF50',
-    fontWeight: 'bold',
-  },
-  statusPending: {
-    color: '#FF9800',
-    fontWeight: 'bold',
-  },
-  statusRejected: {
-    color: '#F44336',
-    fontWeight: 'bold',
   },
 });
